@@ -83,15 +83,51 @@ export default function StatsPage({ data, onBack }: Props) {
   const showLogs = logs.slice(0, 100);
 
   // 按日期分组日志
-  const groupedLogs: Record<string, any[]> = {};
+  const groupedLogs: Record<string, {text: string, time: string}[]> = {};
   showLogs.forEach(log => {
-    // 假设 log.time 格式为 "2023/10/24 14:30:00" 或 "10/24/2023, 2:30:00 PM"
-    // 取逗号或空格前的第一部分作为日期
-    const dateStr = log.time.split(/[\s,]+/)[0];
+    let dateStr = '';
+    let timeStr = '';
+    let textStr = '';
+
+    if (Array.isArray(log)) {
+      const [t, actionId, val, eDiff] = log;
+      const d = new Date(t);
+      dateStr = d.toLocaleDateString();
+      timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const actions = ['睡眠', '运动', '主食', '喝水', '拉伸', '小憩', '冥想', '肠道管理', '番茄钟'];
+      const actionName = actions[actionId];
+
+      if (actionId === 8) {
+        if (val === 100) textStr = `🍅 完成完美番茄钟 (专注度: 100%)`;
+        else textStr = `🍅 完成番茄钟 (专注度: ${val}%)`;
+      } else {
+        let valStr = '';
+        if (actionId === 0) valStr = `${val}h`;
+        else if (actionId === 1) valStr = `${val}min`;
+        else if ([2,3,4,6].includes(actionId)) valStr = `第 ${val} 次`;
+        else valStr = '完成';
+        textStr = `✅ 打卡 [${actionName}] : ${valStr}`;
+      }
+      if (eDiff > 0) textStr += ` (+${(eDiff % 1 === 0 ? eDiff : eDiff.toFixed(1))}精力)`;
+      else if (eDiff < 0) textStr += ` (${(eDiff % 1 === 0 ? eDiff : eDiff.toFixed(1))}精力)`;
+
+    } else {
+      if (log.t) {
+        const d = new Date(log.t);
+        dateStr = d.toLocaleDateString();
+        timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } else if (log.time) {
+        dateStr = log.time.split(/[\s,]+/)[0];
+        timeStr = log.time.replace(dateStr, '').trim() || log.time.split(' ')[1];
+      }
+      textStr = log.txt || log.text || '';
+    }
+
     if (!groupedLogs[dateStr]) {
       groupedLogs[dateStr] = [];
     }
-    groupedLogs[dateStr].push(log);
+    groupedLogs[dateStr].push({ text: textStr, time: timeStr });
   });
 
   // 默认展开第一天
@@ -136,12 +172,10 @@ export default function StatsPage({ data, onBack }: Props) {
                 {expandedDates[dateStr] && (
                   <div className="pl-2 pr-1 mt-1 border-l-2 border-emerald-100 ml-1">
                     {groupedLogs[dateStr].map((log: any, i: number) => {
-                      // 提取时间部分 (假设格式为 "日期 时间")
-                      const timeStr = log.time.replace(dateStr, '').trim() || log.time.split(' ')[1];
                       return (
                         <div key={i} className="py-1.5 border-b border-gray-50 last:border-0 flex justify-between items-start">
                           <span className="text-gray-600">{log.text}</span>
-                          <span className="text-gray-400 text-[9px] whitespace-nowrap ml-1.5">{timeStr}</span>
+                          <span className="text-gray-400 text-[9px] whitespace-nowrap ml-1.5">{log.time}</span>
                         </div>
                       );
                     })}

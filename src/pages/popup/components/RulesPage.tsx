@@ -43,10 +43,13 @@ export default function RulesPage({ data, onBack }: { data: StorageData; onBack:
               <span>主食/运动 (中)</span> <span className="text-emerald-500 font-bold">+ {config.midHeal} 点/次</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>喝水/拉伸/小憩/冥想 (小)</span> <span className="text-emerald-500 font-bold">+ {config.smallHeal} 点/次</span>
+              <span>喝水/拉伸/小憩/冥想/肠道 (小)</span> <span className="text-emerald-500 font-bold">+ {config.smallHeal} 点/次</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>未满运动(30m)或睡眠(8h)</span> <span className="text-emerald-500 font-bold">按完成比例恢复</span>
+              <span>睡眠(7-10h)或运动(&lt;30m)</span> <span className="text-emerald-500 font-bold">按比例恢复</span>
+            </li>
+            <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
+              <span>睡眠不足 7h 或超过 10h</span> <span className="text-red-500 font-bold">无恢复</span>
             </li>
           </ul>
         </div>

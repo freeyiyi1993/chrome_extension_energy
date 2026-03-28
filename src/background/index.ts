@@ -66,7 +66,7 @@ async function initData() {
         energyConsumed: 0,
         pomodoro: { running: false, timeLeft: 25 * 60, count: 0, perfectCount: 0, consecutiveCount: 0 }
       },
-      tasks: { sleep: null, exercise: null, meals: 0, water: 0, stretch: 0, nap: false, meditate: 0 },
+      tasks: { sleep: null, exercise: null, meals: 0, water: 0, stretch: 0, nap: false, meditate: 0, poop: false },
       stats: [],
       logs: []
     });
@@ -79,20 +79,36 @@ async function handleDayRollover(data: StorageData, todayStr: string) {
   const config = data.config || DEFAULT_CONFIG;
   let maxEnergyDelta = 0;
 
-  const isHealthyTasksDone = tasks.sleep && tasks.sleep >= 8 && tasks.meals >= 3 && tasks.exercise && tasks.exercise >= 30 && tasks.water >= 3 && tasks.stretch >= 3;
-  
+  const isHealthyTasksDone = tasks.sleep && tasks.sleep >= 8 && tasks.meals >= 3 && tasks.exercise && tasks.exercise >= 30 && tasks.water >= 3 && tasks.stretch >= 3 && tasks.poop;
+
   const pomoCount = state.pomodoro.count;
   const perfectCount = state.pomodoro.perfectCount;
-  
+
   // 检查是否没有任何输入（节假日/空闲模式）
-  const isNoInput = !tasks.sleep && !tasks.exercise && tasks.meals === 0 && tasks.water === 0 && tasks.stretch === 0 && !tasks.nap && tasks.meditate === 0 && pomoCount === 0;
+  const isNoInput = !tasks.sleep && !tasks.exercise && tasks.meals === 0 && tasks.water === 0 && tasks.stretch === 0 && !tasks.nap && tasks.meditate === 0 && !tasks.poop && pomoCount === 0;
+
+  // 如果是没有任何输入的节假日模式，直接跳过所有惩罚判断，也不计入历史统计
+  if (isNoInput) {
+    state.logicalDate = todayStr;
+    state.energy = state.maxEnergy * 0.8;
+    state.energyConsumed = 0;
+    state.lastUpdateTime = Date.now();
+    state.lowEnergyReminded = false;
+    state.pomodoro.count = 0;
+    state.pomodoro.perfectCount = 0;
+    state.pomodoro.consecutiveCount = 0;
+
+    const newTasks: Tasks = { sleep: null, exercise: null, meals: 0, water: 0, stretch: 0, nap: false, meditate: 0, poop: false };
+
+    await chrome.storage.local.set({ state, tasks: newTasks });
+    return;
+  }
 
   if (isHealthyTasksDone && perfectCount >= 4) {
     maxEnergyDelta += config.perfectDayBonus;
   }
-  
-  // 如果不是完全没有输入的节假日模式，才进行惩罚判断
-  if (!isNoInput && perfectCount === 0 && (!tasks.exercise || tasks.exercise < 30) && (!tasks.sleep || tasks.sleep < 6)) {
+
+  if (perfectCount === 0 && (!tasks.exercise || tasks.exercise < 30) && (!tasks.sleep || tasks.sleep < 6)) {
     maxEnergyDelta -= config.badDayPenalty;
   }
 
@@ -117,7 +133,7 @@ async function handleDayRollover(data: StorageData, todayStr: string) {
   state.pomodoro.perfectCount = 0;
   state.pomodoro.consecutiveCount = 0;
 
-  const newTasks: Tasks = { sleep: null, exercise: null, meals: 0, water: 0, stretch: 0, nap: false, meditate: 0 };
+  const newTasks: Tasks = { sleep: null, exercise: null, meals: 0, water: 0, stretch: 0, nap: false, meditate: 0, poop: false };
 
   await chrome.storage.local.set({ state, tasks: newTasks, stats });
 }

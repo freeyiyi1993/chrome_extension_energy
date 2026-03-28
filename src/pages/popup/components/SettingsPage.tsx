@@ -94,7 +94,7 @@ export default function SettingsPage({ data, onBack, onSaved }: Props) {
         <InputRow config={config} onChange={handleChange} label="最低精力保底" field="minEnergy" min={0} />
 
         <div className="font-bold my-3 text-[13px]">✨ 日常恢复</div>
-        <InputRow config={config} onChange={handleChange} label="小恢复点数 (喝水/拉伸/小憩/冥想)" field="smallHeal" min={0} />
+        <InputRow config={config} onChange={handleChange} label="小恢复点数 (喝水/拉伸/小憩/冥想/肠道)" field="smallHeal" min={0} />
         <InputRow config={config} onChange={handleChange} label="中恢复点数 (主食/运动满30m)" field="midHeal" min={0} />
         <InputRow config={config} onChange={handleChange} label="大恢复比例 (睡眠满8h)" field="bigHealRatio" min={0} max={1} step="0.1" />
 

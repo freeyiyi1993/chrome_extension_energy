@@ -1,4 +1,4 @@
-import { Menu, Play, RefreshCw, Droplet, Coffee, Activity, Moon, Brain } from 'lucide-react';
+import { Menu, Play, RefreshCw, Droplet, Coffee, Activity, Moon, Brain, Wind } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { type StorageData, type Tasks } from '../../../types';
 
@@ -64,35 +64,35 @@ export default function MainDashboard({ data, onOpenMenu, onDataChange }: Props)
     }
 
     if (key === 'sleep' && typeof val === 'number') {
-      const ratio = val >= 8 ? 1 : val / 8;
+      let ratio = 0;
+      if (val >= 7 && val <= 10) {
+        ratio = val >= 8 ? 1 : val / 8;
+      }
       d.state.energy = Math.min(d.state.maxEnergy, d.state.energy + d.state.maxEnergy * currentConfig.bigHealRatio * ratio);
     } else if (key === 'exercise' && typeof val === 'number') {
       const ratio = val >= 30 ? 1 : val / 30;
       d.state.energy = Math.min(d.state.maxEnergy, d.state.energy + currentConfig.midHeal * ratio);
     } else if (key === 'meals') {
       d.state.energy = Math.min(d.state.maxEnergy, d.state.energy + currentConfig.midHeal);
-    } else if (key === 'water' || key === 'stretch' || key === 'nap' || key === 'meditate') {
+    } else if (key === 'water' || key === 'stretch' || key === 'nap' || key === 'meditate' || key === 'poop') {
       d.state.energy = Math.min(d.state.maxEnergy, d.state.energy + currentConfig.smallHeal);
     }
 
     const energyDiff = d.state.energy - oldEnergy;
-    const taskNames: Record<string, string> = {
-      sleep: '睡眠', exercise: '运动',
-      meals: '主食', water: '喝水', stretch: '拉伸',
-      nap: '小憩', meditate: '冥想'
+
+    const actionMap: Record<string, number> = {
+      sleep: 0, exercise: 1, meals: 2, water: 3, stretch: 4,
+      nap: 5, meditate: 6, poop: 7
     };
-
-    let logVal: string | number = '';
-    if (isCounterTask) logVal = `第 ${(d.tasks as any)[key]} 次`;
-    else if (typeof val === 'boolean') logVal = '完成';
-    else logVal = val;
-
-    let logText = `✅ 打卡 [${taskNames[key as string]}] : ${logVal}`;
-    if (energyDiff > 0) logText += ` (+${(energyDiff % 1 === 0 ? energyDiff : energyDiff.toFixed(1))}精力)`;
-    else if (energyDiff < 0) logText += ` (${(energyDiff % 1 === 0 ? energyDiff : energyDiff.toFixed(1))}精力)`;
+    const actionId = actionMap[key as string];
+    let numericVal = 1;
+    if (isCounterTask) numericVal = (d.tasks as any)[key];
+    else if (typeof val === 'boolean') numericVal = val ? 1 : 0;
+    else numericVal = Number(val);
 
     const logs = d.logs || [];
-    logs.unshift({ time: new Date().toLocaleString(), text: logText });
+    // 极致压缩：使用元组存储 [时间戳, 动作ID, 动作值, 精力变化]
+    logs.unshift([Date.now(), actionId, numericVal, Number(energyDiff.toFixed(1))]);
     await chrome.storage.local.set({ tasks: d.tasks, state: d.state, logs });
     onDataChange();
   };
@@ -113,7 +113,7 @@ export default function MainDashboard({ data, onOpenMenu, onDataChange }: Props)
     );
   };
 
-  const renderBooleanButton = (key: 'nap', label: string, icon: React.ReactNode) => {
+  const renderBooleanButton = (key: 'nap' | 'poop', label: string, icon: React.ReactNode) => {
     const isDone = tasks[key] as boolean;
     return (
       <div className="flex flex-col h-full justify-end">
@@ -236,6 +236,7 @@ export default function MainDashboard({ data, onOpenMenu, onDataChange }: Props)
           {renderCounterButton('stretch', '拉伸放松', <Activity size={14} className="mr-1 text-green-500"/>)}
           {renderBooleanButton('nap', '午间小憩', <Moon size={14} className="mr-1 text-indigo-400"/>)}
           {renderCounterButton('meditate', '正念冥想', <Brain size={14} className="mr-1 text-purple-400"/>)}
+          {renderBooleanButton('poop', '肠道管理', <Wind size={14} className="mr-1 text-amber-600"/>)}
         </div>
       </div>
     </div>

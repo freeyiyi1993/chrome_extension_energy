@@ -23,19 +23,16 @@ export default function FinishApp() {
     const data = await chrome.storage.local.get(['state', 'config', 'logs']) as StorageData;
     if (!data.state) return;
 
-    let logMsg = `🍅 完成番茄钟 (专注度: ${score}%)`;
-
+    let energyDiff = 0;
     if (score === 100) {
-      const config = data.config || { smallHeal: 5 };
       data.state.pomodoro.perfectCount += 1;
-      data.state.energy = Math.min(data.state.maxEnergy, data.state.energy + config.smallHeal);
-      logMsg = `🍅 完成完美番茄钟 (专注度: 100%) (+${config.smallHeal}精力)`;
     }
 
     data.state.pomodoro.count += 1;
 
     const logs = data.logs || [];
-    logs.unshift({ time: new Date().toLocaleString(), text: logMsg });
+    // 动作ID 8 为番茄钟
+    logs.unshift([Date.now(), 8, score, energyDiff]);
 
     await chrome.storage.local.set({ state: data.state, logs });
     window.close();
