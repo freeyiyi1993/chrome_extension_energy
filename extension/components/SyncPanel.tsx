@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { onAuthStateChanged, signOut, signInWithCredential, GoogleAuthProvider, type User } from 'firebase/auth';
 import { auth } from '../../shared/firebase';
 import { syncToCloud, pullAndMerge, forcePull } from '../storage';
 import { Cloud, LogIn, LogOut, RefreshCw, Download } from 'lucide-react';
@@ -11,13 +11,14 @@ interface Props {
 export default function SyncPanel({ onSynced }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
   const [message, setMessage] = useState('');
   const pushTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const initialPullDone = useRef(false);
 
   const showMessage = (msg: string) => {
     setMessage(msg);
-    setTimeout(() => setMessage(''), 3000);
+    setTimeout(() => setMessage(''), 5000);
   };
 
   const handlePull = useCallback(async (uid: string, silent = false) => {
@@ -84,8 +85,34 @@ export default function SyncPanel({ onSynced }: Props) {
     };
   }, [user, handlePush]);
 
-  const handleLogin = () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL('extension/pages/login/index.html') });
+  const handleLogin = async () => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      showMessage('未配置 VITE_GOOGLE_CLIENT_ID');
+      return;
+    }
+
+    setLoggingIn(true);
+    try {
+      // 通过 background service worker 执行 OAuth，避免 popup 关闭导致流程中断
+      const response = await chrome.runtime.sendMessage({ type: 'GOOGLE_LOGIN', clientId });
+      if (response?.error) throw new Error(response.error);
+      if (!response?.accessToken) throw new Error('未获取到 access_token');
+
+      const credential = GoogleAuthProvider.credential(null, response.accessToken);
+      await signInWithCredential(auth, credential);
+    } catch (err: any) {
+      const msg = err.message ?? String(err);
+      if (msg.includes('redirect_uri_mismatch') || msg.includes('400')) {
+        const ru = chrome.identity.getRedirectURL();
+        showMessage(`OAuth 重定向 URI 未配置，请在 Google Cloud Console 添加: ${ru}`);
+        console.error('[Energy] redirect_uri_mismatch. Add redirect URI:', ru);
+      } else if (msg !== 'The user did not approve access.') {
+        showMessage(`登录失败: ${msg}`);
+      }
+    } finally {
+      setLoggingIn(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -103,10 +130,11 @@ export default function SyncPanel({ onSynced }: Props) {
 
       {!user ? (
         <button
-          className="w-full flex items-center justify-center gap-2 bg-blue-500 text-white py-1.5 rounded-lg text-xs font-bold hover:bg-blue-600 transition-colors"
+          className="w-full flex items-center justify-center gap-2 bg-blue-500 text-white py-1.5 rounded-lg text-xs font-bold hover:bg-blue-600 transition-colors disabled:opacity-50"
           onClick={handleLogin}
+          disabled={loggingIn}
         >
-          <LogIn size={14} /> Google 登录 (开启云同步)
+          <LogIn size={14} /> {loggingIn ? '登录中...' : 'Google 登录 (开启云同步)'}
         </button>
       ) : (
         <div className="flex items-center gap-1.5">

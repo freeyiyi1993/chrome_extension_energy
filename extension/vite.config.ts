@@ -15,7 +15,6 @@ export default defineConfig({
       input: {
         popup: resolve(__dirname, 'pages/popup/index.html'),
         finish: resolve(__dirname, 'pages/finish/finish.html'),
-        login: resolve(__dirname, 'pages/login/index.html'),
         background: resolve(__dirname, 'background/index.ts')
       },
       output: {
