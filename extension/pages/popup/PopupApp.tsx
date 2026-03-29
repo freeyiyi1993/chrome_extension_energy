@@ -64,7 +64,9 @@ export default function PopupApp() {
         <SettingsPage data={data} storage={storage} onBack={() => navigateTo('main')} onSaved={fetchData} />
       )}
 
-      <SyncPanel onSynced={fetchData} />
+      <div className="mt-3">
+        <SyncPanel onSynced={fetchData} />
+      </div>
     </div>
   );
 }
