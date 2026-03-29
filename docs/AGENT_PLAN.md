@@ -234,7 +234,9 @@
 每个 Agent 完成一个独立功能点后**必须立即 commit**，不要攒到最后批量提交。
 
 **规则**:
-- commit message 格式: `type: 简要描述`（type: feat / fix / refactor / chore / docs）
+- commit message 格式: `type(agent名): 简要描述`（type: feat / fix / refactor / chore / docs）
+- 示例: `feat(frontend): 番茄钟增加紧凑模式`、`fix(backend): 修复分时段餐食惩罚逻辑`
+- CTO 自身的 commit scope 用 cto: `docs(cto): 更新 README`
 - 每个 commit 只做一件事
 - 先确认构建通过 (`npm run build` 或 `npm run build:web`) 再提交
 - CTO 不负责替子 Agent 补提交
