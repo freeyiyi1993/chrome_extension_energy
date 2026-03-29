@@ -52,7 +52,7 @@ export async function initWebData() {
     const startOfToday = getLogical8AM();
     const minsPassedSince8AM = Math.max(0, (now - startOfToday) / 60000);
 
-    let initialEnergy = config.maxEnergy * 0.8;
+    let initialEnergy = config.maxEnergy;
     let decayRate = config.decayRate / 60;
     const currentHour = new Date().getHours();
 
@@ -106,11 +106,14 @@ async function tick() {
       const perfectCount = state.pomodoro.perfectCount;
       let maxEnergyDelta = 0;
 
-      const mealsVal = tasks['meals'] as number || 0;
-      const waterVal = tasks['water'] as number || 0;
-      const stretchVal = tasks['stretch'] as number || 0;
-      const poopVal = tasks['poop'] as boolean || false;
-      const isHealthy = sleepVal && sleepVal >= 8 && mealsVal >= 3 && exerciseVal && exerciseVal >= 30 && waterVal >= 3 && stretchVal >= 3 && poopVal;
+      // 动态判断完美一天：基于 countsForPerfectDay 字段
+      const perfectDayDefs = taskDefs.filter(d => d.enabled && d.countsForPerfectDay);
+      const isHealthy = perfectDayDefs.every(def => {
+        const v = tasks[def.id];
+        if (def.type === 'counter') return (v as number || 0) >= (def.maxCount || 3);
+        if (def.type === 'boolean') return !!v;
+        return v !== null && v !== undefined;
+      });
 
       if (isHealthy && perfectCount >= 4) maxEnergyDelta += config.perfectDayBonus;
       if (perfectCount === 0 && (!exerciseVal || exerciseVal < 30) && (!sleepVal || sleepVal < 6)) maxEnergyDelta -= config.badDayPenalty;
@@ -128,7 +131,7 @@ async function tick() {
     }
 
     data.state.logicalDate = todayStr;
-    data.state.energy = data.state.maxEnergy * 0.8;
+    data.state.energy = data.state.maxEnergy;
     data.state.energyConsumed = 0;
     data.state.lastUpdateTime = Date.now();
     data.state.lowEnergyReminded = false;

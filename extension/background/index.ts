@@ -61,7 +61,7 @@ async function initData() {
     const startOfToday = getLogical8AM();
     const minsPassedSince8AM = Math.max(0, (now - startOfToday) / 60000);
 
-    let initialEnergy = config.maxEnergy * 0.8;
+    let initialEnergy = config.maxEnergy;
     let decayRate = config.decayRate / 60;
     const currentHour = new Date().getHours();
 
@@ -97,13 +97,16 @@ async function handleDayRollover(data: StorageData, todayStr: string) {
   let maxEnergyDelta = 0;
 
   const sleepVal = tasks['sleep'] as number | null;
-  const mealsVal = tasks['meals'] as number || 0;
   const exerciseVal = tasks['exercise'] as number | null;
-  const waterVal = tasks['water'] as number || 0;
-  const stretchVal = tasks['stretch'] as number || 0;
-  const poopVal = tasks['poop'] as boolean || false;
 
-  const isHealthyTasksDone = sleepVal && sleepVal >= 8 && mealsVal >= 3 && exerciseVal && exerciseVal >= 30 && waterVal >= 3 && stretchVal >= 3 && poopVal;
+  // 动态判断完美一天：基于 countsForPerfectDay 字段
+  const perfectDayDefs = taskDefs.filter(d => d.enabled && d.countsForPerfectDay);
+  const isHealthyTasksDone = perfectDayDefs.every(def => {
+    const v = tasks[def.id];
+    if (def.type === 'counter') return (v as number || 0) >= (def.maxCount || 3);
+    if (def.type === 'boolean') return !!v;
+    return v !== null && v !== undefined;
+  });
 
   const pomoCount = state.pomodoro.count;
   const perfectCount = state.pomodoro.perfectCount;
@@ -118,7 +121,7 @@ async function handleDayRollover(data: StorageData, todayStr: string) {
 
   if (isNoInput) {
     state.logicalDate = todayStr;
-    state.energy = state.maxEnergy * 0.8;
+    state.energy = state.maxEnergy;
     state.energyConsumed = 0;
     state.lastUpdateTime = Date.now();
     state.lowEnergyReminded = false;
@@ -151,7 +154,7 @@ async function handleDayRollover(data: StorageData, todayStr: string) {
   if (state.maxEnergy < config.minEnergy) state.maxEnergy = config.minEnergy;
 
   state.logicalDate = todayStr;
-  state.energy = state.maxEnergy * 0.8;
+  state.energy = state.maxEnergy;
   state.energyConsumed = 0;
   state.lastUpdateTime = Date.now();
   state.lowEnergyReminded = false;

@@ -67,18 +67,19 @@ export interface CustomTaskDef {
   placeholder?: string; // number 类型的输入提示
   builtin?: boolean;    // 是否为内置任务（内置任务不可删除，只能禁用）
   enabled: boolean;     // 是否启用
+  countsForPerfectDay?: boolean; // 是否计入完美一天结算
 }
 
 // 内置默认任务列表
 export const DEFAULT_TASK_DEFS: CustomTaskDef[] = [
-  { id: 'sleep',    name: '睡眠',     icon: '💤', type: 'number',  healLevel: 'big',   unit: 'h',   placeholder: '8',     builtin: true, enabled: true },
-  { id: 'exercise', name: '运动',     icon: '🏃', type: 'number',  healLevel: 'mid',   unit: 'min', placeholder: '目标:30', builtin: true, enabled: true },
-  { id: 'meals',    name: '主食打卡', icon: '🍚', type: 'counter', healLevel: 'mid',   maxCount: 3, builtin: true, enabled: true },
-  { id: 'water',    name: '喝水打卡', icon: '💧', type: 'counter', healLevel: 'small', maxCount: 3, builtin: true, enabled: true },
-  { id: 'stretch',  name: '拉伸放松', icon: '🧘', type: 'counter', healLevel: 'small', maxCount: 3, builtin: true, enabled: true },
-  { id: 'nap',      name: '午间小憩', icon: '🌙', type: 'boolean', healLevel: 'small', builtin: true, enabled: true },
-  { id: 'meditate', name: '正念冥想', icon: '🧠', type: 'counter', healLevel: 'small', maxCount: 3, builtin: true, enabled: true },
-  { id: 'poop',     name: '肠道管理', icon: '💨', type: 'boolean', healLevel: 'small', builtin: true, enabled: true },
+  { id: 'sleep',    name: '睡眠',     icon: '💤', type: 'number',  healLevel: 'big',   unit: 'h',   placeholder: '8',     builtin: true, enabled: true, countsForPerfectDay: true },
+  { id: 'exercise', name: '运动',     icon: '🏃', type: 'number',  healLevel: 'mid',   unit: 'min', placeholder: '目标:30', builtin: true, enabled: true, countsForPerfectDay: true },
+  { id: 'meals',    name: '主食打卡', icon: '🍚', type: 'counter', healLevel: 'mid',   maxCount: 3, builtin: true, enabled: true, countsForPerfectDay: true },
+  { id: 'water',    name: '喝水打卡', icon: '💧', type: 'counter', healLevel: 'small', maxCount: 3, builtin: true, enabled: true, countsForPerfectDay: true },
+  { id: 'stretch',  name: '拉伸放松', icon: '🧘', type: 'counter', healLevel: 'small', maxCount: 3, builtin: true, enabled: true, countsForPerfectDay: false },
+  { id: 'nap',      name: '午间小憩', icon: '🌙', type: 'boolean', healLevel: 'small', builtin: true, enabled: true, countsForPerfectDay: false },
+  { id: 'meditate', name: '正念冥想', icon: '🧠', type: 'counter', healLevel: 'small', maxCount: 3, builtin: true, enabled: true, countsForPerfectDay: false },
+  { id: 'poop',     name: '肠道管理', icon: '💨', type: 'boolean', healLevel: 'small', builtin: true, enabled: true, countsForPerfectDay: false },
 ];
 
 export interface StorageData {

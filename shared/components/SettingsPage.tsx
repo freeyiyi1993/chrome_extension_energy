@@ -177,6 +177,7 @@ export default function SettingsPage({ data, storage, onBack, onSaved }: Props) 
                   <span className="text-sm">{def.icon}</span>
                   <span className="text-xs text-gray-700 truncate">{def.name}</span>
                   <span className="text-[10px] text-gray-400">{HEAL_LABELS[def.healLevel]}</span>
+                  {def.countsForPerfectDay && <span className="text-[9px] text-amber-500">★</span>}
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
@@ -277,6 +278,16 @@ export default function SettingsPage({ data, storage, onBack, onSaved }: Props) 
                     />
                   </div>
                 )}
+
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] text-gray-500">计入完美一天</label>
+                  <button
+                    className={`text-[10px] px-2 py-0.5 rounded transition-colors ${editingTask.countsForPerfectDay ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-400'}`}
+                    onClick={() => setEditingTask({ ...editingTask, countsForPerfectDay: !editingTask.countsForPerfectDay })}
+                  >
+                    {editingTask.countsForPerfectDay ? '是' : '否'}
+                  </button>
+                </div>
 
                 {editingTask.type === 'number' && (
                   <div className="flex gap-2">
