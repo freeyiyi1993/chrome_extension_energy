@@ -111,9 +111,10 @@ npm run lint              # ESLint
 - **状态**: 已实现
 
 ### ADR-008: Chrome 扩展登录方案
-- **决策**: 在新 tab 中打开独立登录页（auth page），使用标准 `signInWithPopup`
-- **原因**: popup 中无法直接 `signInWithPopup`（弹窗导致 popup 关闭）；不依赖 `chrome.identity` API 和 OAuth Client ID
-- **原理**: 扩展页面和 popup 共享 `chrome-extension://ID/` origin，Firebase Auth 通过 IndexedDB 自动共享登录状态
+- **决策**: 使用 `chrome.identity.launchWebAuthFlow` 获取 OAuth token，再通过 `signInWithCredential` 登入 Firebase
+- **原因**: `signInWithPopup` 会加载外部脚本 (`apis.google.com`)，被 MV3 CSP 拦截
+- **配置**: 需要 `VITE_GOOGLE_CLIENT_ID`（Firebase Console → Authentication → Google → Web SDK configuration）
+- **权限**: manifest 添加 `identity` permission
 - **状态**: 已实现
 
 ## Current Status
