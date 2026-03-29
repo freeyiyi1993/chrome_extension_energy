@@ -39,13 +39,16 @@ export default function RulesPage({ data, onBack }: { data: StorageData; onBack:
               <span>每日 8:00 基础恢复</span> <span className="text-emerald-500 font-bold">恢复到上限 100%</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>睡眠 8h (标准)</span> <span className="text-emerald-500 font-bold">恢复到精力上限</span>
+              <span>睡眠 8h (标准)</span> <span className="text-emerald-500 font-bold">设定当日精力起点 = 上限</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>睡眠不足 8h</span> <span className="text-red-500 font-bold">等比扣除精力上限 (如 6h → 上限 x 75%)</span>
+              <span>睡眠不足 8h</span> <span className="text-red-500 font-bold">起点按比例缩减 (如 6h → 上限 x 75%)</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>睡眠超过 8h</span> <span className="text-gray-400">无额外奖励</span>
+              <span>睡眠超过 8h</span> <span className="text-gray-400">起点不超过上限</span>
+            </li>
+            <li className="py-1 border-b border-dashed border-gray-200 text-[10px] text-gray-400">
+              公式：恢复后精力 = max(当前精力, 睡眠起点 - 今日已消耗)。打卡越早恢复越多，打卡晚了已消耗的精力回不来
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
               <span>主食/运动 (中恢复)</span> <span className="text-emerald-500 font-bold">+ {config.midHeal} 点/次</span>
