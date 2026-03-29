@@ -3,7 +3,7 @@
   "name": "精力管理可视化",
   "version": "1.0",
   "description": "游戏化管理你的精力和日常习惯。",
-  "permissions": ["storage", "alarms"],
+  "permissions": ["storage", "alarms", "identity"],
   "action": {
     "default_popup": "extension/pages/popup/index.html",
     "default_title": "精力管理"

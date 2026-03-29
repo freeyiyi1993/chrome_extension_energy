@@ -15,7 +15,6 @@ export default defineConfig({
       input: {
         popup: resolve(__dirname, '../extension/pages/popup/index.html'),
         finish: resolve(__dirname, '../extension/pages/finish/finish.html'),
-        auth: resolve(__dirname, '../extension/pages/auth/auth.html'),
         background: resolve(__dirname, '../extension/background/index.ts')
       },
       output: {

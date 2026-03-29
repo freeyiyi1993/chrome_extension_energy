@@ -5,7 +5,8 @@ import { resolve } from 'path'
 export default defineConfig({
   plugins: [react()],
   root: resolve(__dirname),
-  publicDir: resolve(__dirname, '../src/public'),
+  envDir: resolve(__dirname, '..'),
+  publicDir: resolve(__dirname, '../extension/public'),
   css: {
     postcss: resolve(__dirname, '../conf/postcss.config.js'),
   },

@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { onAuthStateChanged, signOut, signInWithCredential, GoogleAuthProvider, type User } from 'firebase/auth';
 import { auth } from '../../shared/firebase';
 import { syncToCloud, pullAndMerge, forcePull } from '../storage';
 import { Cloud, LogIn, LogOut, RefreshCw, Download } from 'lucide-react';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 interface Props {
   onSynced: () => void;
@@ -84,9 +86,34 @@ export default function SyncPanel({ onSynced }: Props) {
     };
   }, [user, handlePush]);
 
-  const handleLogin = () => {
-    // 在新 tab 中打开登录页
-    chrome.tabs.create({ url: chrome.runtime.getURL('extension/pages/auth/auth.html') });
+  const handleLogin = async () => {
+    if (!GOOGLE_CLIENT_ID) {
+      showMessage('未配置 VITE_GOOGLE_CLIENT_ID');
+      return;
+    }
+    try {
+      const redirectUrl = chrome.identity.getRedirectURL();
+      const scopes = encodeURIComponent('openid email profile');
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(redirectUrl)}&scope=${scopes}`;
+
+      const responseUrl = await chrome.identity.launchWebAuthFlow({
+        url: authUrl,
+        interactive: true,
+      });
+
+      if (!responseUrl) throw new Error('授权被取消');
+
+      const hashParams = new URLSearchParams(responseUrl.split('#')[1]);
+      const accessToken = hashParams.get('access_token');
+      if (!accessToken) throw new Error('未获取到 access_token');
+
+      const credential = GoogleAuthProvider.credential(null, accessToken);
+      await signInWithCredential(auth, credential);
+    } catch (err: any) {
+      if (err.message !== 'The user did not approve access.') {
+        showMessage(`登录失败: ${err.message}`);
+      }
+    }
   };
 
   const handleLogout = async () => {

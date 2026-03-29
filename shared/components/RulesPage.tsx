@@ -1,5 +1,5 @@
 import { ChevronLeft } from 'lucide-react';
-import { type StorageData, type Config } from '../types';
+import { type StorageData, type Config, DEFAULT_TASK_DEFS } from '../types';
 
 const DEFAULT_CONFIG: Config = {
   maxEnergy: 65,
@@ -15,6 +15,8 @@ const DEFAULT_CONFIG: Config = {
 
 export default function RulesPage({ data, onBack }: { data: StorageData; onBack: () => void }) {
   const config = data.config || DEFAULT_CONFIG;
+  const taskDefs = data.taskDefs || DEFAULT_TASK_DEFS;
+  const perfectDayTasks = taskDefs.filter(d => d.enabled && d.countsForPerfectDay);
 
   return (
     <div className="animate-[fadeIn_0.2s_ease]">
@@ -34,22 +36,25 @@ export default function RulesPage({ data, onBack }: { data: StorageData; onBack:
           <div className="font-bold text-[13px] mb-2 flex items-center gap-1">🌱 日常恢复</div>
           <ul className="list-none p-0 m-0 text-xs">
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>每日 8:00 基础恢复</span> <span className="text-emerald-500 font-bold">上限的 80%</span>
+              <span>每日 8:00 基础恢复</span> <span className="text-emerald-500 font-bold">恢复到上限 100%</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>睡眠恢复 (大)</span> <span className="text-emerald-500 font-bold">+ {Math.round(config.maxEnergy * config.bigHealRatio)} (上限的 {Math.round(config.bigHealRatio * 100)}%)</span>
+              <span>睡眠 8h (标准)</span> <span className="text-emerald-500 font-bold">恢复到精力上限</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>主食/运动 (中)</span> <span className="text-emerald-500 font-bold">+ {config.midHeal} 点/次</span>
+              <span>睡眠不足 8h</span> <span className="text-red-500 font-bold">等比扣除精力上限 (如 6h → 上限 x 75%)</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>喝水/拉伸/小憩/冥想/肠道 (小)</span> <span className="text-emerald-500 font-bold">+ {config.smallHeal} 点/次</span>
+              <span>睡眠超过 8h</span> <span className="text-gray-400">无额外奖励</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>睡眠(7-10h)或运动(&lt;30m)</span> <span className="text-emerald-500 font-bold">按比例恢复</span>
+              <span>主食/运动 (中恢复)</span> <span className="text-emerald-500 font-bold">+ {config.midHeal} 点/次</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>睡眠不足 7h 或超过 10h</span> <span className="text-red-500 font-bold">无恢复</span>
+              <span>喝水/拉伸/小憩/冥想/肠道 (小恢复)</span> <span className="text-emerald-500 font-bold">+ {config.smallHeal} 点/次</span>
+            </li>
+            <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
+              <span>运动不足 30 min</span> <span className="text-emerald-500 font-bold">按比例恢复</span>
             </li>
           </ul>
         </div>
@@ -61,7 +66,7 @@ export default function RulesPage({ data, onBack }: { data: StorageData; onBack:
               <span>基础自然流失</span> <span className="text-red-500 font-bold">- {config.decayRate} 点/小时</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>错过饭点惩罚</span> <span className="text-red-500 font-bold">流失率 x {config.penaltyMultiplier}</span>
+              <span>19:00 后未吃 2 餐</span> <span className="text-red-500 font-bold">流失率 x {config.penaltyMultiplier}</span>
             </li>
           </ul>
         </div>
@@ -70,10 +75,16 @@ export default function RulesPage({ data, onBack }: { data: StorageData; onBack:
           <div className="font-bold text-[13px] mb-2 flex items-center gap-1">📈 长期成长 (次日生效)</div>
           <ul className="list-none p-0 m-0 text-xs">
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>完美一天 (任务全清+4完美番茄)</span> <span className="text-emerald-500 font-bold">精力上限 + {config.perfectDayBonus}</span>
+              <span>完美一天</span> <span className="text-emerald-500 font-bold">精力上限 + {config.perfectDayBonus}</span>
+            </li>
+            <li className="py-1 border-b border-dashed border-gray-200 text-[10px] text-gray-400">
+              条件：{perfectDayTasks.map(d => d.icon + d.name).join('、')} 全部完成 + 4 个完美番茄
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>糟糕一天 (0完美番茄且无运动少睡)</span> <span className="text-red-500 font-bold">精力上限 - {config.badDayPenalty}</span>
+              <span>糟糕一天</span> <span className="text-red-500 font-bold">精力上限 - {config.badDayPenalty}</span>
+            </li>
+            <li className="py-1 text-[10px] text-gray-400">
+              条件：0 个完美番茄 + 无运动(&lt;30m) + 少睡(&lt;6h)
             </li>
           </ul>
         </div>
