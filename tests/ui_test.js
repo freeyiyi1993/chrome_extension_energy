@@ -27,7 +27,7 @@ async function runTest() {
     console.log(`插件已加载，ID: ${extensionId}`);
 
     const page = await browser.newPage();
-    const popupUrl = `chrome-extension://${extensionId}/src/pages/popup/index.html`;
+    const popupUrl = `chrome-extension://${extensionId}/extension/pages/popup/index.html`;
     console.log(`正在访问 Popup: ${popupUrl}`);
     
     await page.goto(popupUrl);
