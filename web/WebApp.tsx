@@ -100,7 +100,7 @@ export default function WebApp() {
     <>
       <div className="min-h-screen bg-gray-50 flex items-start justify-center pt-4 pb-4 px-4">
         <div className="w-full max-w-md relative">
-          <div className="min-h-[400px]">
+          <div>
             <MenuPanel
               isOpen={menuOpen}
               onClose={() => setMenuOpen(false)}
