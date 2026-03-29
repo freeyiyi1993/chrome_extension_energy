@@ -82,15 +82,11 @@ export async function syncFromCloud(uid: string): Promise<StorageData | null> {
 
 export async function pullAndMerge(uid: string): Promise<void> {
   const cloudData = await syncFromCloud(uid);
-  if (!cloudData) return;
-
-  const localData = await storage.get(null) as StorageData;
-
-  // 简单策略：云端数据的 lastUpdateTime 更新则用云端，否则保留本地
-  const cloudTime = cloudData.state?.lastUpdateTime || 0;
-  const localTime = localData.state?.lastUpdateTime || 0;
-
-  if (cloudTime > localTime) {
-    await storage.set(cloudData);
+  if (!cloudData) {
+    // 云端无数据，清空本地
+    localStorage.removeItem(LOCAL_KEY);
+    return;
   }
+  // 拉取以云端为准，直接覆盖本地
+  setLocalData(cloudData);
 }
