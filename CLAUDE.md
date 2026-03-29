@@ -92,6 +92,23 @@ npm run lint              # ESLint
 - **关键设计**: `MainDashboard` 和 `SettingsPage` 通过 props 接收 `storage: StorageInterface`
 - **状态**: 已完成
 
+### ADR-005: 睡眠恢复规则
+- **决策**: 8h 标准恢复到精力上限，<8h 等比扣除当日 maxEnergy，>8h 无额外奖励
+- **原因**: 睡眠直接影响当日精力上限，比固定比例恢复更贴近真实体感
+- **状态**: 已实现
+
+### ADR-006: 完美一天动态判断
+- **决策**: CustomTaskDef 新增 `countsForPerfectDay` 字段，完美一天结算基于该字段动态判断
+- **原因**: 用户需要控制哪些任务计入完美一天（如 stretch/meditate/poop 不计入）
+- **默认计入**: sleep, exercise, meals, water
+- **默认不计入**: stretch, nap, meditate, poop
+- **状态**: 已实现
+
+### ADR-007: 自动云同步
+- **决策**: 登录后自动拉取云端数据，每 60 秒自动推送，登出前自动保存
+- **原因**: 减少手动操作，保留手动拉取/推送按钮作为兜底
+- **状态**: 已实现
+
 ## Current Status
 - [x] 插件基础功能 (MVP)
 - [x] 节假日模式 + 日志压缩优化
@@ -100,6 +117,9 @@ npm run lint              # ESLint
 - [x] 三目录重构 (shared/ + extension/ + web/) + Vite 双构建配置
 - [x] 登录/同步 UI (Firebase Auth + Firestore)
 - [x] 废弃 src/ 目录，全面切换到新结构
+- [x] 睡眠恢复新规则 + 每日 100% 恢复
+- [x] countsForPerfectDay 完美一天动态判断
+- [x] Web 去卡片样式 + 自动云同步
 - [ ] 更新 README
 
 ## 重启后的标准起手式
