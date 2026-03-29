@@ -22,7 +22,6 @@ extension/                     # Chrome 扩展端
 ├── background/index.ts        #   Service Worker (衰减/番茄/日期翻转)
 ├── storage.ts                 #   chrome.storage.local 实现 + 云同步
 ├── pages/popup/               #   弹窗入口 (PopupApp.tsx)
-├── pages/login/               #   登录页 (LoginApp.tsx)
 ├── pages/finish/              #   全屏提醒页 (FinishApp.tsx)
 ├── components/SyncPanel.tsx   #   同步面板
 └── public/manifest.json       #   Manifest V3
@@ -108,14 +107,27 @@ npm run lint              # ESLint
 ### ADR-007: 自动云同步
 - **决策**: 登录后自动拉取云端数据，每 60 秒自动推送，登出前自动保存
 - **原因**: 减少手动操作，保留手动拉取/推送按钮作为兜底
-- **同步策略**: 拉取=时间戳比较取新，强制拉取=云端覆盖本地，推送=本地覆盖云端
+- **同步策略**: 拉取=日志合并+状态取更新方，强制拉取=云端覆盖本地，推送=本地覆盖云端
 - **状态**: 已实现
 
 ### ADR-008: Chrome 扩展登录方案
-- **决策**: 使用 `chrome.identity.launchWebAuthFlow` 获取 OAuth token，再通过 `signInWithCredential` 登入 Firebase
+- **决策**: 使用 `chrome.identity.launchWebAuthFlow` 获取 OAuth token，再通过 `signInWithCredential` 登入 Firebase。OAuth 在 background service worker 中执行，避免 popup 关闭中断
 - **原因**: `signInWithPopup` 会加载外部脚本 (`apis.google.com`)，被 MV3 CSP 拦截
 - **配置**: 需要 `VITE_GOOGLE_CLIENT_ID`（Firebase Console → Authentication → Google → Web SDK configuration）
 - **权限**: manifest 添加 `identity` permission
+- **状态**: 已实现（独立登录页已删除，改为 SyncPanel 内联）
+
+### ADR-009: Email/Password 登录
+- **决策**: 双端均支持 Google + Email/Password 两种登录方式
+- **原因**: Google OAuth 在扩展端配置复杂（redirect URI 随 extension ID 变化），Email/Password 作为可靠备选
+- **实现**: Firebase `signInWithEmailAndPassword` / `createUserWithEmailAndPassword`，无需额外 provider
+- **前提**: Firebase Console 需启用 Email/Password 认证方式
+- **状态**: 已实现
+
+### ADR-010: 日志合并策略
+- **决策**: `pullAndMerge` 改为日志合并策略（`timestamp|action` 去重 + 排序），状态取更新的一方
+- **原因**: 原 Last-Write-Wins 整体覆盖会丢失另一端的日志记录
+- **已知限制**: 同一秒内同类操作若 value/energyDiff 不同，会丢一条（当前 1 分钟 tick 间隔下极不可能）
 - **状态**: 已实现
 
 ## Current Status
@@ -129,13 +141,15 @@ npm run lint              # ESLint
 - [x] 睡眠恢复新规则 + 每日 100% 恢复
 - [x] countsForPerfectDay 完美一天动态判断
 - [x] Web 去卡片样式 + 自动云同步
-- [x] Chrome 扩展登录 + 云同步 (auth tab + SyncPanel)
+- [x] Chrome 扩展登录 + 云同步 (OAuth 在 background SW 执行)
 - [x] 消除 conf/ 目录，构建配置归各端 + 根目录
 - [x] 餐食惩罚改为分时段 (10:00/14:00/19:00)
-- [x] Chrome 扩展独立登录页 (extension/pages/login/)
+- [x] ~~Chrome 扩展独立登录页~~ → 已删除，改为 SyncPanel 内联登录
 - [x] Web 端低精力提醒 (当前页全屏覆盖)
 - [x] 项目文档体系 (docs/PRD + TECH_DESIGN + UED + AGENT_PLAN)
 - [x] 更新 README
+- [x] Email/Password 登录 (双端 Google + 邮箱两种方式)
+- [x] 日志合并策略 (pullAndMerge 从整体覆盖改为 timestamp+action 去重合并)
 
 ## 重启后的标准起手式
 请读取 CLAUDE.md 和最近的 git log，告诉我项目当前状态，然后继续上次未完成的任务
