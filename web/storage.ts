@@ -42,14 +42,30 @@ export const storage = {
   set: webSet,
 };
 
+// Firestore 不支持嵌套数组，CompactLog 是 [n,n,n,n] 会导致 logs 成为嵌套数组
+// 上传前转为对象数组，下载后还原
+function logsToFirestore(logs: any[]): any[] {
+  return logs.map(entry =>
+    Array.isArray(entry) ? { _t: entry[0], _a: entry[1], _v: entry[2], _d: entry[3] } : entry
+  );
+}
+
+function logsFromFirestore(logs: any[]): any[] {
+  return logs.map(entry =>
+    entry && typeof entry === 'object' && '_t' in entry ? [entry._t, entry._a, entry._v, entry._d] : entry
+  );
+}
+
 // --- Firebase 云同步 ---
 export async function syncToCloud(uid: string): Promise<void> {
   const data = await storage.get(null) as StorageData;
   const ref = doc(db, 'users', uid);
-  await setDoc(ref, {
+  const payload = {
     ...data,
+    logs: data.logs ? logsToFirestore(data.logs) : [],
     lastSyncAt: Date.now(),
-  }, { merge: true });
+  };
+  await setDoc(ref, payload, { merge: true });
 }
 
 export async function syncFromCloud(uid: string): Promise<StorageData | null> {
@@ -58,6 +74,9 @@ export async function syncFromCloud(uid: string): Promise<StorageData | null> {
   if (!snap.exists()) return null;
   const cloudData = snap.data() as StorageData & { lastSyncAt?: number };
   delete (cloudData as any).lastSyncAt;
+  if (cloudData.logs) {
+    cloudData.logs = logsFromFirestore(cloudData.logs);
+  }
   return cloudData;
 }
 
