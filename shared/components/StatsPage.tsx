@@ -80,7 +80,11 @@ export default function StatsPage({ data, onBack }: Props) {
   }, [data]);
 
   const logs = data.logs || [];
-  const showLogs = logs.slice(0, 100);
+  const showLogs = [...logs].sort((a, b) => {
+    const tA = Array.isArray(a) ? a[0] : (a.t || (a.time ? new Date(a.time).getTime() : 0));
+    const tB = Array.isArray(b) ? b[0] : (b.t || (b.time ? new Date(b.time).getTime() : 0));
+    return tB - tA;
+  }).slice(0, 100);
 
   // 按日期分组日志
   const groupedLogs: Record<string, {text: string, time: string}[]> = {};
@@ -148,9 +152,9 @@ export default function StatsPage({ data, onBack }: Props) {
     groupedLogs[dateStr].push({ text: textStr, time: timeStr });
   });
 
-  // 默认展开第一天
+  // 默认展开最近一天
   useEffect(() => {
-    const dates = Object.keys(groupedLogs);
+    const dates = Object.keys(groupedLogs).sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
     if (dates.length > 0 && Object.keys(expandedDates).length === 0) {
       setExpandedDates({ [dates[0]]: true });
     }
@@ -175,7 +179,7 @@ export default function StatsPage({ data, onBack }: Props) {
           {Object.keys(groupedLogs).length === 0 ? (
             <div className="text-center text-gray-400 py-5">暂无日志记录</div>
           ) : (
-            Object.keys(groupedLogs).map((dateStr) => (
+            Object.keys(groupedLogs).sort((a, b) => new Date(b).getTime() - new Date(a).getTime()).map((dateStr) => (
               <div key={dateStr} className="mb-2 last:mb-0">
                 <div
                   className="flex items-center justify-between bg-gray-50 p-1.5 rounded cursor-pointer hover:bg-gray-100 transition-colors"
