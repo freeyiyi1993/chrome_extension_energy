@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { signInWithPopup, signOut, onAuthStateChanged, type User } from 'firebase/auth';
 import { auth, googleProvider } from '../../shared/firebase';
-import { syncToCloud, pullAndMerge } from '../storage';
-import { Cloud, LogIn, LogOut, RefreshCw } from 'lucide-react';
+import { syncToCloud, pullAndMerge, forcePull } from '../storage';
+import { Cloud, LogIn, LogOut, RefreshCw, Download } from 'lucide-react';
 
 interface Props {
   onSynced: () => void;
@@ -23,11 +23,27 @@ export default function AuthPanel({ onSynced }: Props) {
   const handlePull = useCallback(async (uid: string, silent = false) => {
     setSyncing(true);
     try {
-      await pullAndMerge(uid);
-      if (!silent) showMessage('已从云端拉取最新数据');
-      onSynced();
+      const result = await pullAndMerge(uid);
+      if (!silent) {
+        if (result === 'cloud') showMessage('已从云端拉取最新数据');
+        else if (result === 'local') showMessage('本地数据更新，无需拉取');
+        else showMessage('云端无数据');
+      }
+      if (result === 'cloud') onSynced();
     } catch (err: any) {
       if (!silent) showMessage(`同步失败: ${err.message}`);
+    }
+    setSyncing(false);
+  }, [onSynced]);
+
+  const handleForcePull = useCallback(async (uid: string) => {
+    setSyncing(true);
+    try {
+      await forcePull(uid);
+      showMessage('已强制覆盖为云端数据');
+      onSynced();
+    } catch (err: any) {
+      showMessage(`同步失败: ${err.message}`);
     }
     setSyncing(false);
   }, [onSynced]);
@@ -100,13 +116,22 @@ export default function AuthPanel({ onSynced }: Props) {
         <div className="flex items-center gap-2">
           <Cloud size={12} className="text-emerald-500 shrink-0" />
           <span className="text-[10px] text-gray-500 truncate flex-1">{user.email}</span>
-          <span className="text-[9px] text-gray-400">自动同步中</span>
+          <span className="text-[9px] text-gray-400">自动同步</span>
           <button
             className="text-[10px] px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded hover:bg-emerald-100 transition-colors flex items-center gap-1"
             onClick={() => handlePull(user.uid)}
             disabled={syncing}
+            title="智能拉取：取更新的数据"
           >
             <RefreshCw size={10} className={syncing ? 'animate-spin' : ''} /> 拉取
+          </button>
+          <button
+            className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded hover:bg-amber-100 transition-colors flex items-center gap-1"
+            onClick={() => handleForcePull(user.uid)}
+            disabled={syncing}
+            title="强制拉取：云端直接覆盖本地"
+          >
+            <Download size={10} /> 强制
           </button>
           <button
             className="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors"

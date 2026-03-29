@@ -80,13 +80,28 @@ export async function syncFromCloud(uid: string): Promise<StorageData | null> {
   return cloudData;
 }
 
-export async function pullAndMerge(uid: string): Promise<void> {
+// 智能拉取：比较时间戳，取更新的
+export async function pullAndMerge(uid: string): Promise<'cloud' | 'local' | 'empty'> {
+  const cloudData = await syncFromCloud(uid);
+  if (!cloudData) return 'empty';
+
+  const localData = getLocalData();
+  const cloudTime = cloudData.state?.lastUpdateTime || 0;
+  const localTime = localData.state?.lastUpdateTime || 0;
+
+  if (cloudTime > localTime) {
+    setLocalData(cloudData);
+    return 'cloud';
+  }
+  return 'local';
+}
+
+// 强制拉取：无视时间戳，云端直接覆盖本地
+export async function forcePull(uid: string): Promise<void> {
   const cloudData = await syncFromCloud(uid);
   if (!cloudData) {
-    // 云端无数据，清空本地
     localStorage.removeItem(LOCAL_KEY);
     return;
   }
-  // 拉取以云端为准，直接覆盖本地
   setLocalData(cloudData);
 }
