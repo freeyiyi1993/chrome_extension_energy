@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronDown, ChevronRight } from 'lucide-react';
-import { type StorageData } from '../../../types';
+import { type StorageData, DEFAULT_TASK_DEFS } from '../../../types';
 import { Chart, LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Tooltip, Legend } from 'chart.js';
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Tooltip, Legend);
@@ -95,17 +95,35 @@ export default function StatsPage({ data, onBack }: Props) {
       dateStr = d.toLocaleDateString();
       timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      const actions = ['睡眠', '运动', '主食', '喝水', '拉伸', '小憩', '冥想', '肠道管理', '番茄钟'];
-      const actionName = actions[actionId];
+      const taskDefs = data.taskDefs || DEFAULT_TASK_DEFS;
+
+      // 内置 actionId 映射
+      const builtinActions: Record<number, string> = {
+        0: '睡眠', 1: '运动', 2: '主食', 3: '喝水', 4: '拉伸',
+        5: '小憩', 6: '冥想', 7: '肠道管理', 8: '番茄钟'
+      };
+
+      let actionName: string;
+      let taskDef = undefined;
+      if (actionId >= 100) {
+        const idx = actionId - 100;
+        taskDef = taskDefs[idx];
+        actionName = taskDef ? `${taskDef.icon} ${taskDef.name}` : `自定义任务#${idx}`;
+      } else {
+        actionName = builtinActions[actionId] || `未知`;
+        taskDef = taskDefs.find(d => {
+          const bMap: Record<string, number> = { sleep: 0, exercise: 1, meals: 2, water: 3, stretch: 4, nap: 5, meditate: 6, poop: 7 };
+          return bMap[d.id] === actionId;
+        });
+      }
 
       if (actionId === 8) {
         if (val === 100) textStr = `🍅 完成完美番茄钟 (专注度: 100%)`;
         else textStr = `🍅 完成番茄钟 (专注度: ${val}%)`;
       } else {
         let valStr = '';
-        if (actionId === 0) valStr = `${val}h`;
-        else if (actionId === 1) valStr = `${val}min`;
-        else if ([2,3,4,6].includes(actionId)) valStr = `第 ${val} 次`;
+        if (taskDef?.type === 'number') valStr = `${val}${taskDef.unit || ''}`;
+        else if (taskDef?.type === 'counter') valStr = `第 ${val} 次`;
         else valStr = '完成';
         textStr = `✅ 打卡 [${actionName}] : ${valStr}`;
       }
