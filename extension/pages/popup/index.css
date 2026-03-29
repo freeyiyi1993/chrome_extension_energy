@@ -6,6 +6,9 @@ body {
   margin: 0;
   padding: 0;
   width: 400px;
+  min-height: 300px;
+  max-height: 600px;
+  overflow-y: auto;
   font-family: system-ui, -apple-system, sans-serif;
   background-color: #f9fafb;
   color: #1f2937;

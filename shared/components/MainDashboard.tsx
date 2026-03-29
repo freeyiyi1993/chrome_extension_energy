@@ -10,9 +10,10 @@ interface Props {
   onOpenMenu: () => void;
   onDataChange: () => void;
   flat?: boolean;
+  compact?: boolean;
 }
 
-export default function MainDashboard({ data, storage, onOpenMenu, onDataChange, flat }: Props) {
+export default function MainDashboard({ data, storage, onOpenMenu, onDataChange, flat, compact }: Props) {
   const { state, tasks, config } = data;
   const taskDefs = (data.taskDefs || DEFAULT_TASK_DEFS).filter(d => d.enabled);
 
@@ -31,8 +32,8 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
 
   if (!state || !tasks || !config) return null;
 
-  const card = flat ? 'mb-3' : 'bg-white rounded-lg p-3 mb-3 shadow-sm';
-  const cardLast = flat ? '' : 'bg-white rounded-lg p-3 shadow-sm';
+  const card = flat ? 'mb-3' : `bg-white rounded-lg ${compact ? 'p-2 mb-2' : 'p-3 mb-3'} shadow-sm`;
+  const cardLast = flat ? '' : `bg-white rounded-lg ${compact ? 'p-2' : 'p-3'} shadow-sm`;
   const energyPercent = Math.min(100, Math.max(0, (state.energy / state.maxEnergy) * 100));
   let barColor = '#10b981';
   if (state.energy < 20) barColor = '#ef4444';
@@ -182,7 +183,7 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
   return (
     <div className="animate-[fadeIn_0.2s_ease]">
       {/* Header */}
-      <div className="flex justify-between items-center mb-3 px-1">
+      <div className={`flex justify-between items-center ${compact ? 'mb-2' : 'mb-3'} px-1`}>
         <div className="w-7 h-7 flex items-center justify-center cursor-pointer text-gray-600 rounded-md hover:bg-gray-200 transition-colors" onClick={onOpenMenu}>
           <Menu size={20} />
         </div>
@@ -205,24 +206,24 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
 
       {/* Pomodoro */}
       <div className={card}>
-        <div className="relative w-[140px] mx-auto">
+        <div className={`relative ${compact ? 'w-[110px]' : 'w-[140px]'} mx-auto`}>
           <div
-            className="absolute -top-1 -right-1 w-7 h-7 flex items-center justify-center bg-gray-100 rounded-full cursor-pointer z-20 opacity-60 hover:opacity-100 hover:bg-gray-200 hover:rotate-15 transition-all shadow-sm text-sm"
+            className={`absolute -top-1 -right-1 ${compact ? 'w-6 h-6' : 'w-7 h-7'} flex items-center justify-center bg-gray-100 rounded-full cursor-pointer z-20 opacity-60 hover:opacity-100 hover:bg-gray-200 hover:rotate-15 transition-all shadow-sm text-sm`}
             onClick={resetPomo}
             title="重新开始"
           >
-            <RefreshCw size={14} />
+            <RefreshCw size={compact ? 12 : 14} />
           </div>
 
           <div
-            className="w-[140px] h-[140px] rounded-full relative flex items-center justify-center cursor-pointer transition-transform hover:scale-105"
+            className={`${compact ? 'w-[110px] h-[110px]' : 'w-[140px] h-[140px]'} rounded-full relative flex items-center justify-center cursor-pointer transition-transform hover:scale-105`}
             style={{
               background: `conic-gradient(#10b981 ${pomoPercent}%, #e5e7eb ${pomoPercent}%)`
             }}
             onClick={togglePomo}
           >
-            <div className="w-[124px] h-[124px] bg-white rounded-full flex flex-col items-center justify-center relative">
-              <div className={`text-4xl font-bold transition-colors ${state.pomodoro.running ? 'text-emerald-500' : 'text-gray-300'}`}>
+            <div className={`${compact ? 'w-[96px] h-[96px]' : 'w-[124px] h-[124px]'} bg-white rounded-full flex flex-col items-center justify-center relative`}>
+              <div className={`${compact ? 'text-2xl' : 'text-4xl'} font-bold transition-colors ${state.pomodoro.running ? 'text-emerald-500' : 'text-gray-300'}`}>
                 {m}:{s}
               </div>
               <div className="text-[10px] text-gray-400 mt-1">
@@ -231,7 +232,7 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
 
               {!state.pomodoro.running && (
                 <div className="absolute inset-0 bg-white/85 rounded-full flex items-center justify-center text-emerald-500">
-                  <Play size={36} fill="currentColor" />
+                  <Play size={compact ? 28 : 36} fill="currentColor" />
                 </div>
               )}
             </div>

@@ -38,7 +38,7 @@ export default function PopupApp() {
   }
 
   return (
-    <div className="relative min-h-[400px] bg-gray-50 p-2.5">
+    <div className="relative bg-gray-50 p-2.5">
       <MenuPanel
         isOpen={menuOpen}
         onClose={() => setMenuOpen(false)}
@@ -51,6 +51,7 @@ export default function PopupApp() {
           storage={storage}
           onOpenMenu={() => setMenuOpen(true)}
           onDataChange={fetchData}
+          compact
         />
       )}
 
