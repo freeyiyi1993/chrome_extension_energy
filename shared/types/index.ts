@@ -82,6 +82,18 @@ export const DEFAULT_TASK_DEFS: CustomTaskDef[] = [
   { id: 'poop',     name: '肠道管理', icon: '💨', type: 'boolean', healLevel: 'small', builtin: true, enabled: true, countsForPerfectDay: false },
 ];
 
+export const DEFAULT_CONFIG: Config = {
+  maxEnergy: 65,
+  minEnergy: 5,
+  smallHeal: 2,
+  midHeal: 5,
+  bigHealRatio: 0.2,
+  decayRate: 4,
+  penaltyMultiplier: 1.5,
+  perfectDayBonus: 1,
+  badDayPenalty: 1,
+};
+
 export interface StorageData {
   config?: Config;
   state?: AppState;

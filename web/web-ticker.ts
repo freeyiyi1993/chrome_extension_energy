@@ -1,41 +1,6 @@
 import { storage } from './storage';
-import { type Config, type AppState, type Tasks, type StorageData, type CustomTaskDef, DEFAULT_TASK_DEFS } from '../shared/types';
-
-const DEFAULT_CONFIG: Config = {
-  maxEnergy: 65,
-  minEnergy: 5,
-  smallHeal: 2,
-  midHeal: 5,
-  bigHealRatio: 0.2,
-  decayRate: 4,
-  penaltyMultiplier: 1.5,
-  perfectDayBonus: 1,
-  badDayPenalty: 1
-};
-
-function getLogicalDate() {
-  const now = new Date();
-  if (now.getHours() < 8) now.setDate(now.getDate() - 1);
-  return now.toLocaleDateString('en-CA', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
-}
-
-function getLogical8AM() {
-  const now = new Date();
-  if (now.getHours() < 8) now.setDate(now.getDate() - 1);
-  now.setHours(8, 0, 0, 0);
-  return now.getTime();
-}
-
-function buildEmptyTasks(taskDefs: CustomTaskDef[]): Tasks {
-  const tasks: Tasks = {};
-  for (const def of taskDefs) {
-    if (!def.enabled) continue;
-    if (def.type === 'counter') tasks[def.id] = 0;
-    else if (def.type === 'boolean') tasks[def.id] = false;
-    else tasks[def.id] = null;
-  }
-  return tasks;
-}
+import { type AppState, type Tasks, type StorageData, DEFAULT_TASK_DEFS, DEFAULT_CONFIG } from '../shared/types';
+import { getLogicalDate, getLogical8AM, buildEmptyTasks } from '../shared/utils/time';
 
 export async function initWebData() {
   const data = await storage.get(null) as StorageData;
@@ -154,7 +119,11 @@ async function tick() {
   let decayRate = config.decayRate / 60;
   const currentHour = new Date().getHours();
   const mealsCount = tasks['meals'] as number || 0;
-  if (currentHour >= 19 && mealsCount < 2) decayRate *= config.penaltyMultiplier;
+  const missedMeals =
+    (currentHour >= 10 && mealsCount < 1) ||
+    (currentHour >= 14 && mealsCount < 2) ||
+    (currentHour >= 19 && mealsCount < 3);
+  if (missedMeals) decayRate *= config.penaltyMultiplier;
 
   const drop = decayRate * minsPassed;
   state.energyConsumed = (state.energyConsumed || 0) + drop;
@@ -174,10 +143,21 @@ async function tick() {
     }
   }
 
+  // 低精力提醒检测
+  if (state.energy < 20 && !state.lowEnergyReminded) {
+    state.lowEnergyReminded = true;
+    if (lowEnergyCallback) lowEnergyCallback();
+  }
+
   await storage.set({ state });
 }
 
 let tickInterval: ReturnType<typeof setInterval> | null = null;
+let lowEnergyCallback: (() => void) | null = null;
+
+export function setLowEnergyCallback(cb: (() => void) | null) {
+  lowEnergyCallback = cb;
+}
 
 export function startWebTicker() {
   if (tickInterval) return;

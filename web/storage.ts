@@ -1,10 +1,12 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../shared/firebase';
 import { type StorageData } from '../shared/types';
+import {
+  type StorageInterface,
+  syncToCloud as sharedSyncToCloud,
+  pullAndMerge as sharedPullAndMerge,
+  forcePull as sharedForcePull,
+} from '../shared/storage';
 
-// Web 版始终使用 localStorage
-export const isChromeExtension = false;
-
+// Web 版使用 localStorage
 const LOCAL_KEY = 'energy_app_data';
 
 function getLocalData(): StorageData {
@@ -36,72 +38,22 @@ const webSet = async (data: Partial<StorageData>): Promise<void> => {
   setLocalData(all);
 };
 
-// 统一存储接口
-export const storage = {
+export const storage: StorageInterface = {
   get: webGet,
   set: webSet,
 };
 
-// Firestore 不支持嵌套数组，CompactLog 是 [n,n,n,n] 会导致 logs 成为嵌套数组
-// 上传前转为对象数组，下载后还原
-function logsToFirestore(logs: any[]): any[] {
-  return logs.map(entry =>
-    Array.isArray(entry) ? { _t: entry[0], _a: entry[1], _v: entry[2], _d: entry[3] } : entry
-  );
-}
-
-function logsFromFirestore(logs: any[]): any[] {
-  return logs.map(entry =>
-    entry && typeof entry === 'object' && '_t' in entry ? [entry._t, entry._a, entry._v, entry._d] : entry
-  );
-}
-
-// --- Firebase 云同步 ---
+// --- Firebase 云同步（委托给 shared/storage） ---
 export async function syncToCloud(uid: string): Promise<void> {
-  const data = await storage.get(null) as StorageData;
-  const ref = doc(db, 'users', uid);
-  const payload = {
-    ...data,
-    logs: data.logs ? logsToFirestore(data.logs) : [],
-    lastSyncAt: Date.now(),
-  };
-  await setDoc(ref, payload, { merge: true });
+  await sharedSyncToCloud(storage, uid);
 }
 
-export async function syncFromCloud(uid: string): Promise<StorageData | null> {
-  const ref = doc(db, 'users', uid);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return null;
-  const cloudData = snap.data() as StorageData & { lastSyncAt?: number };
-  delete (cloudData as any).lastSyncAt;
-  if (cloudData.logs) {
-    cloudData.logs = logsFromFirestore(cloudData.logs);
-  }
-  return cloudData;
-}
-
-// 智能拉取：比较时间戳，取更新的
 export async function pullAndMerge(uid: string): Promise<'cloud' | 'local' | 'empty'> {
-  const cloudData = await syncFromCloud(uid);
-  if (!cloudData) return 'empty';
-
-  const localData = getLocalData();
-  const cloudTime = cloudData.state?.lastUpdateTime || 0;
-  const localTime = localData.state?.lastUpdateTime || 0;
-
-  if (cloudTime > localTime) {
-    setLocalData(cloudData);
-    return 'cloud';
-  }
-  return 'local';
+  return sharedPullAndMerge(storage, uid);
 }
 
-// 强制拉取：无视时间戳，云端直接覆盖本地
 export async function forcePull(uid: string): Promise<void> {
-  const cloudData = await syncFromCloud(uid);
-  if (!cloudData) {
+  await sharedForcePull(storage, uid, async () => {
     localStorage.removeItem(LOCAL_KEY);
-    return;
-  }
-  setLocalData(cloudData);
+  });
 }
