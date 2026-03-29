@@ -21,13 +21,15 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
 
   useEffect(() => {
     if (!tasks) return;
-    const inputs: Record<string, string> = {};
-    taskDefs.forEach(def => {
-      if (def.type === 'number' && tasks[def.id] !== null && tasks[def.id] !== undefined) {
-        inputs[def.id] = String(tasks[def.id]);
-      }
+    setLocalInputs(prev => {
+      const next = { ...prev };
+      taskDefs.forEach(def => {
+        if (def.type === 'number' && tasks[def.id] !== null && tasks[def.id] !== undefined) {
+          next[def.id] = String(tasks[def.id]);
+        }
+      });
+      return next;
     });
-    setLocalInputs(inputs);
   }, [tasks]);
 
   if (!state || !tasks || !config) return null;
