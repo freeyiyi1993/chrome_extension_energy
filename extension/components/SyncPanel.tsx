@@ -91,9 +91,9 @@ export default function SyncPanel({ onSynced }: Props) {
   }, [user, handlePush]);
 
   const handleGoogleLogin = async () => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID_EXTENSION;
     if (!clientId) {
-      showMessage('未配置 VITE_GOOGLE_CLIENT_ID');
+      showMessage('未配置 VITE_GOOGLE_CLIENT_ID_EXTENSION');
       return;
     }
 
