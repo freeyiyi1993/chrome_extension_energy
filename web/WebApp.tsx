@@ -63,6 +63,34 @@ export default function WebApp() {
     };
   }, [currentPage]);
 
+  // 客户端检测番茄钟时间到（不等 60s ticker）
+  useEffect(() => {
+    if (!data?.state?.pomodoro.running) return;
+
+    const checkCompletion = async () => {
+      const elapsed = (Date.now() - data.state!.lastUpdateTime) / 1000;
+      const realTimeLeft = data.state!.pomodoro.timeLeft - elapsed;
+
+      if (realTimeLeft <= 0) {
+        const d = await storage.get(['state']) as StorageData;
+        if (d.state && d.state.pomodoro.running) {
+          d.state.pomodoro.running = false;
+          d.state.pomodoro.timeLeft = 25 * 60;
+          d.state.pomodoro.consecutiveCount = (d.state.pomodoro.consecutiveCount || 0) + 1;
+          if (d.state.pomodoro.consecutiveCount >= 3) {
+            d.state.pomodoro.consecutiveCount = 0;
+          }
+          d.state.lastUpdateTime = Date.now();
+          await storage.set({ state: d.state });
+          fetchData();
+        }
+      }
+    };
+
+    const timer = setInterval(checkCompletion, 1000);
+    return () => clearInterval(timer);
+  }, [data?.state?.pomodoro.running, data?.state?.lastUpdateTime]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // 检测番茄钟完成：running 从 true → false
   useEffect(() => {
     if (!data?.state || overlay) return;

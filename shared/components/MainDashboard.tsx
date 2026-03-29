@@ -39,12 +39,14 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
   if (state.energy < 20) barColor = '#ef4444';
   else if (state.energy < 40) barColor = '#f59e0b';
 
-  const pomoPercent = 100 - (state.pomodoro.timeLeft / (25 * 60)) * 100;
-  const m = Math.floor(state.pomodoro.timeLeft / 60).toString().padStart(2, '0');
-  const s = (Math.floor(state.pomodoro.timeLeft) % 60).toString().padStart(2, '0');
+  const elapsedSec = state.pomodoro.running ? (Date.now() - state.lastUpdateTime) / 1000 : 0;
+  const realTimeLeft = Math.max(0, state.pomodoro.timeLeft - elapsedSec);
+  const pomoPercent = 100 - (realTimeLeft / (25 * 60)) * 100;
+  const m = Math.floor(realTimeLeft / 60).toString().padStart(2, '0');
+  const s = (Math.floor(realTimeLeft) % 60).toString().padStart(2, '0');
 
   const togglePomo = async () => {
-    const newState = { ...state, pomodoro: { ...state.pomodoro, running: !state.pomodoro.running } };
+    const newState = { ...state, pomodoro: { ...state.pomodoro, running: !state.pomodoro.running }, lastUpdateTime: Date.now() };
     await storage.set({ state: newState });
     onDataChange();
   };
