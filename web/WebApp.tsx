@@ -55,9 +55,9 @@ export default function WebApp() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-start justify-center pt-8 pb-8">
-      <div className="w-[360px] bg-gray-50 rounded-2xl shadow-xl overflow-hidden relative">
-        <div className="p-2.5 min-h-[400px]">
+    <div className="min-h-screen bg-gray-50 flex items-start justify-center pt-4 pb-4 px-4">
+      <div className="w-full max-w-md relative">
+        <div className="min-h-[400px]">
           <MenuPanel
             isOpen={menuOpen}
             onClose={() => setMenuOpen(false)}
@@ -70,6 +70,7 @@ export default function WebApp() {
               storage={storage}
               onOpenMenu={() => setMenuOpen(true)}
               onDataChange={fetchData}
+              flat
             />
           )}
 

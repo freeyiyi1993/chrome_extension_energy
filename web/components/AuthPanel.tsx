@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { signInWithPopup, signOut, onAuthStateChanged, type User } from 'firebase/auth';
 import { auth, googleProvider } from '../../shared/firebase';
 import { syncToCloud, pullAndMerge } from '../storage';
@@ -12,81 +12,105 @@ export default function AuthPanel({ onSynced }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [message, setMessage] = useState('');
+  const pushTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const initialPullDone = useRef(false);
+
+  const showMessage = (msg: string) => {
+    setMessage(msg);
+    setTimeout(() => setMessage(''), 3000);
+  };
+
+  const handlePull = useCallback(async (uid: string, silent = false) => {
+    setSyncing(true);
+    try {
+      await pullAndMerge(uid);
+      if (!silent) showMessage('已从云端拉取最新数据');
+      onSynced();
+    } catch (err: any) {
+      if (!silent) showMessage(`同步失败: ${err.message}`);
+    }
+    setSyncing(false);
+  }, [onSynced]);
+
+  const handlePush = useCallback(async (uid: string, silent = false) => {
+    try {
+      await syncToCloud(uid);
+      if (!silent) showMessage('已同步到云端');
+    } catch (err: any) {
+      if (!silent) showMessage(`同步失败: ${err.message}`);
+    }
+  }, []);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
+    const unsub = onAuthStateChanged(auth, async (u) => {
+      setUser(u);
+      if (u && !initialPullDone.current) {
+        initialPullDone.current = true;
+        await handlePull(u.uid, true);
+      }
+      if (!u) {
+        initialPullDone.current = false;
+      }
+    });
     return unsub;
-  }, []);
+  }, [handlePull]);
+
+  // 自动推送：每 60 秒
+  useEffect(() => {
+    if (pushTimerRef.current) clearInterval(pushTimerRef.current);
+    if (user) {
+      pushTimerRef.current = setInterval(() => {
+        handlePush(user.uid, true);
+      }, 60_000);
+    }
+    return () => {
+      if (pushTimerRef.current) clearInterval(pushTimerRef.current);
+    };
+  }, [user, handlePush]);
 
   const handleLogin = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err: any) {
-      setMessage(`登录失败: ${err.message}`);
-      setTimeout(() => setMessage(''), 3000);
+      showMessage(`登录失败: ${err.message}`);
     }
   };
 
   const handleLogout = async () => {
+    if (user) await handlePush(user.uid, true);
     await signOut(auth);
   };
 
-  const handlePull = async () => {
-    if (!user) return;
-    setSyncing(true);
-    try {
-      await pullAndMerge(user.uid);
-      setMessage('已从云端拉取最新数据');
-      onSynced();
-    } catch (err: any) {
-      setMessage(`同步失败: ${err.message}`);
-    }
-    setSyncing(false);
-    setTimeout(() => setMessage(''), 3000);
-  };
-
-  const handlePush = async () => {
-    if (!user) return;
-    setSyncing(true);
-    try {
-      await syncToCloud(user.uid);
-      setMessage('已同步到云端');
-    } catch (err: any) {
-      setMessage(`同步失败: ${err.message}`);
-    }
-    setSyncing(false);
-    setTimeout(() => setMessage(''), 3000);
-  };
-
   return (
-    <div className="border-t border-gray-200 bg-white p-3">
+    <div className="border-t border-gray-200 bg-white/80 p-2">
       {message && (
-        <div className="text-[10px] text-center text-emerald-600 mb-2 animate-[fadeIn_0.2s_ease]">
+        <div className="text-[10px] text-center text-emerald-600 mb-1 animate-[fadeIn_0.2s_ease]">
           {message}
         </div>
       )}
 
       {!user ? (
         <button
-          className="w-full flex items-center justify-center gap-2 bg-blue-500 text-white py-2 rounded-lg text-xs font-bold hover:bg-blue-600 transition-colors"
+          className="w-full flex items-center justify-center gap-2 bg-blue-500 text-white py-1.5 rounded-lg text-xs font-bold hover:bg-blue-600 transition-colors"
           onClick={handleLogin}
         >
           <LogIn size={14} /> Google 登录 (开启云同步)
         </button>
       ) : (
         <div className="flex items-center gap-2">
-          <Cloud size={14} className="text-emerald-500 shrink-0" />
+          <Cloud size={12} className="text-emerald-500 shrink-0" />
           <span className="text-[10px] text-gray-500 truncate flex-1">{user.email}</span>
+          <span className="text-[9px] text-gray-400">自动同步中</span>
           <button
-            className="text-[10px] px-2 py-1 bg-emerald-50 text-emerald-700 rounded hover:bg-emerald-100 transition-colors flex items-center gap-1"
-            onClick={handlePull}
+            className="text-[10px] px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded hover:bg-emerald-100 transition-colors flex items-center gap-1"
+            onClick={() => handlePull(user.uid)}
             disabled={syncing}
           >
             <RefreshCw size={10} className={syncing ? 'animate-spin' : ''} /> 拉取
           </button>
           <button
-            className="text-[10px] px-2 py-1 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors"
-            onClick={handlePush}
+            className="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors"
+            onClick={() => handlePush(user.uid)}
             disabled={syncing}
           >
             推送
