@@ -100,9 +100,6 @@ export default function WebApp() {
     <>
       <div className="min-h-screen bg-gray-50 flex items-start justify-center pt-4 pb-4 px-4">
         <div className="w-full max-w-md relative">
-          {/* 顶部同步面板 */}
-          <AuthPanel onSynced={fetchData} />
-
           <div className="min-h-[400px]">
             <MenuPanel
               isOpen={menuOpen}
@@ -130,6 +127,9 @@ export default function WebApp() {
               <SettingsPage data={data} storage={storage} onBack={() => navigateTo('main')} onSaved={fetchData} />
             )}
           </div>
+
+          {/* 底部同步面板 */}
+          <AuthPanel onSynced={fetchData} />
         </div>
       </div>
 
