@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
-import { type StorageData, type AppLogEntry, type Tasks } from './types';
+import { type StorageData, type AppLogEntry, type Tasks, type AppState } from './types';
 
 // 统一存储接口：各平台（Chrome 扩展 / Web）各自实现
 export interface StorageInterface {
@@ -106,41 +106,83 @@ function mergeTasks(local: Tasks | undefined, cloud: Tasks | undefined): Tasks {
   return merged;
 }
 
-/** 智能拉取：合并日志和任务，状态取更新的一方 */
-export async function pullAndMerge(storage: StorageInterface, uid: string): Promise<'cloud' | 'local' | 'merged' | 'empty'> {
+/** 合并 state：各字段分别取合理值，不再整体按 lastUpdateTime 取一方 */
+function mergeState(local: AppState | undefined, cloud: AppState | undefined): AppState | undefined {
+  if (!local && !cloud) return undefined;
+  if (!local) return cloud;
+  if (!cloud) return local;
+
+  const lp = local.pomodoro;
+  const cp = cloud.pomodoro;
+
+  // pomodoro.running: 任一端 running=true 则保持 true
+  const running = lp.running || cp.running;
+  // pomodoro.timeLeft: running 时取较低值（更接近完成），否则取本地
+  const timeLeft = running ? Math.min(lp.timeLeft, cp.timeLeft) : lp.timeLeft;
+
+  return {
+    energy: Math.min(local.energy, cloud.energy),
+    maxEnergy: Math.min(local.maxEnergy, cloud.maxEnergy),
+    energyConsumed: Math.max(local.energyConsumed || 0, cloud.energyConsumed || 0),
+    logicalDate: local.logicalDate >= cloud.logicalDate ? local.logicalDate : cloud.logicalDate,
+    lowEnergyReminded: local.lowEnergyReminded || cloud.lowEnergyReminded,
+    lastUpdateTime: Date.now(),
+    pomodoro: {
+      running,
+      timeLeft,
+      count: Math.max(lp.count, cp.count),
+      perfectCount: Math.max(lp.perfectCount, cp.perfectCount),
+      consecutiveCount: Math.max(lp.consecutiveCount, cp.consecutiveCount),
+    },
+  };
+}
+
+/** 双向同步：合并本地与云端数据，写回双端 */
+export async function sync(storage: StorageInterface, uid: string): Promise<'synced' | 'no_change' | 'empty'> {
   const cloudData = await syncFromCloud(uid);
-  if (!cloudData) return 'empty';
+
+  // 云端无数据：推送本地到云端
+  if (!cloudData) {
+    await syncToCloud(storage, uid);
+    return 'empty';
+  }
 
   const localData = await storage.get(null) as StorageData;
-  const cloudTime = cloudData.state?.lastUpdateTime || 0;
-  const localTime = localData.state?.lastUpdateTime || 0;
 
   const localLogs = localData.logs || [];
   const cloudLogs = cloudData.logs || [];
 
   // 合并日志
   const mergedLogs = mergeLogs(localLogs, cloudLogs);
-  // 合并任务状态
+  // 合并任务
   const mergedTasks = mergeTasks(localData.tasks, cloudData.tasks);
+  // 合并 state
+  const mergedState = mergeState(localData.state, cloudData.state);
 
-  // 状态取更新的一方，但日志和任务始终合并
-  if (cloudTime > localTime) {
-    await storage.set({ ...cloudData, tasks: mergedTasks, logs: mergedLogs });
-    return 'cloud';
-  }
-  // 本地更新或相同：保留本地状态，但合并日志和任务
-  if (mergedLogs.length > localLogs.length || JSON.stringify(mergedTasks) !== JSON.stringify(localData.tasks)) {
-    await storage.set({ ...localData, tasks: mergedTasks, logs: mergedLogs });
-    return 'merged';
-  }
-  return 'local';
-}
+  // 检查是否有变化
+  const logsChanged = mergedLogs.length !== localLogs.length || mergedLogs.length !== cloudLogs.length;
+  const tasksChanged = JSON.stringify(mergedTasks) !== JSON.stringify(localData.tasks) ||
+    JSON.stringify(mergedTasks) !== JSON.stringify(cloudData.tasks);
+  const stateChanged = JSON.stringify(mergedState) !== JSON.stringify(localData.state) ||
+    JSON.stringify(mergedState) !== JSON.stringify(cloudData.state);
 
-/** 强制拉取：云端直接覆盖本地。clearFn 负责平台特定的清除逻辑 */
-export async function forcePull(storage: StorageInterface, uid: string, clearFn: () => Promise<void>): Promise<void> {
-  const cloudData = await syncFromCloud(uid);
-  await clearFn();
-  if (cloudData) {
-    await storage.set(cloudData);
+  if (!logsChanged && !tasksChanged && !stateChanged) {
+    return 'no_change';
   }
+
+  // 合并结果写入本地
+  const mergedData: Partial<StorageData> = {
+    ...localData,
+    logs: mergedLogs,
+    tasks: mergedTasks,
+  };
+  if (mergedState) {
+    mergedData.state = mergedState;
+  }
+  await storage.set(mergedData);
+
+  // 推送合并结果到云端
+  await syncToCloud(storage, uid);
+
+  return 'synced';
 }

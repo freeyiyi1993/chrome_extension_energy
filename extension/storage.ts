@@ -2,8 +2,7 @@ import { type StorageData } from '../shared/types';
 import {
   type StorageInterface,
   syncToCloud as sharedSyncToCloud,
-  pullAndMerge as sharedPullAndMerge,
-  forcePull as sharedForcePull,
+  sync as sharedSync,
 } from '../shared/storage';
 
 // --- Chrome 扩展存储实现 ---
@@ -26,12 +25,6 @@ export async function syncToCloud(uid: string): Promise<void> {
   await sharedSyncToCloud(storage, uid);
 }
 
-export async function pullAndMerge(uid: string): Promise<'cloud' | 'local' | 'merged' | 'empty'> {
-  return sharedPullAndMerge(storage, uid);
-}
-
-export async function forcePull(uid: string): Promise<void> {
-  await sharedForcePull(storage, uid, async () => {
-    await chrome.storage.local.clear();
-  });
+export async function sync(uid: string): Promise<'synced' | 'no_change' | 'empty'> {
+  return sharedSync(storage, uid);
 }
