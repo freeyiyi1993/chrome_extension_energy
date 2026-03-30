@@ -1,6 +1,6 @@
 import { Menu, Play, RefreshCw, BarChart2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { type StorageData, type CustomTaskDef, type PageType, DEFAULT_TASK_DEFS } from '../types';
+import { type StorageData, type CustomTaskDef, type PageType, type CompactLog, DEFAULT_TASK_DEFS } from '../types';
 import { type StorageInterface } from '../storage';
 
 
@@ -83,13 +83,15 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
 
     // 根据 healLevel 恢复精力
     if (def.id === 'sleep' && typeof val === 'number') {
-      // 睡眠恢复规则：睡眠设定今天的精力起点，但扣除已消耗部分
-      // 恢复后精力 = min(maxEnergy, max(当前精力, maxEnergy × min(sleepHours/8, 1) - 今日已消耗))
+      // 睡眠恢复规则：睡眠直接设定精力 = ceiling - consumed
+      // ceiling = maxEnergy × sleepRatio，sleepRatio = min(sleepHours/8, 1)
+      // 睡眠不足 → 天花板低于当前值 → 压低精力；睡眠充足 → 恢复精力
       // 注意：睡眠不足只降低恢复量，不改 maxEnergy
       const hours = Math.min(val, 8);
-      const sleepRecovery = d.state.maxEnergy * (hours / 8);
+      const sleepRatio = hours / 8; // 0~1
+      const ceiling = d.state.maxEnergy * sleepRatio; // 睡眠决定的精力天花板
       const consumed = d.state.energyConsumed || 0;
-      d.state.energy = Math.min(d.state.maxEnergy, Math.max(d.state.energy, sleepRecovery - consumed));
+      d.state.energy = Math.min(d.state.maxEnergy, Math.max(0, ceiling - consumed));
     } else if (def.healLevel === 'big') {
       d.state.energy = Math.min(d.state.maxEnergy, d.state.energy + d.state.maxEnergy * currentConfig.bigHealRatio);
     } else if (def.healLevel === 'mid') {
@@ -252,7 +254,7 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
 
       {/* 数据统计入口 */}
       {onNavigate && (
-        <div className={cardLast}>
+        <div className={card}>
           <button
             className="w-full h-[34px] rounded flex items-center justify-center gap-2 text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors"
             onClick={() => onNavigate('stats')}
@@ -262,6 +264,91 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
           </button>
         </div>
       )}
+
+      {/* 今日日志流 */}
+      {(() => {
+        const builtinLogMap: Record<number, { icon: string; name: string }> = {
+          0: { icon: '💤', name: '睡眠' },
+          1: { icon: '🏃', name: '运动' },
+          2: { icon: '🍽️', name: '三餐' },
+          3: { icon: '💧', name: '饮水' },
+          4: { icon: '🧘', name: '拉伸' },
+          5: { icon: '😴', name: '午睡' },
+          6: { icon: '🧠', name: '冥想' },
+          7: { icon: '💩', name: '肠道' },
+          8: { icon: '🍅', name: '番茄' },
+        };
+
+        const allDefs = data.taskDefs || DEFAULT_TASK_DEFS;
+
+        const getActionInfo = (actionId: number) => {
+          if (builtinLogMap[actionId]) return builtinLogMap[actionId];
+          if (actionId >= 100) {
+            const idx = actionId - 100;
+            const def = allDefs[idx];
+            if (def) return { icon: def.icon, name: def.name };
+          }
+          return { icon: '❓', name: `#${actionId}` };
+        };
+
+        // 过滤今日日志：使用 logicalDate 对应的 8:00 AM 作为起始
+        const todayStart = (() => {
+          if (state.logicalDate) {
+            const [y, m, d] = state.logicalDate.split('-').map(Number);
+            return new Date(y, m - 1, d, 8, 0, 0).getTime();
+          }
+          const now = new Date();
+          now.setHours(8, 0, 0, 0);
+          return now.getTime();
+        })();
+
+        const todayLogs = (data.logs || [])
+          .filter((log): log is CompactLog => Array.isArray(log) && log.length === 4 && log[0] >= todayStart)
+          .sort((a, b) => b[0] - a[0])
+          .slice(0, 20);
+
+        const formatTime = (ts: number) => {
+          const d = new Date(ts);
+          return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+        };
+
+        const formatValue = (actionId: number, val: number) => {
+          if (actionId === 0) return `${val}h`;
+          if (actionId === 1) return `${val}min`;
+          if (actionId === 8) return `${val}%`;
+          // counter / boolean
+          const info = builtinLogMap[actionId];
+          if (info) return String(val);
+          return String(val);
+        };
+
+        return (
+          <div className={cardLast}>
+            <div className="text-xs font-bold text-gray-600 mb-1">今日记录</div>
+            {todayLogs.length === 0 ? (
+              <div className="text-xs text-gray-400">暂无记录</div>
+            ) : (
+              <div className="space-y-0.5">
+                {todayLogs.map((log, i) => {
+                  const [ts, actionId, val, diff] = log;
+                  const info = getActionInfo(actionId);
+                  return (
+                    <div key={`${ts}-${i}`} className="flex items-center text-xs text-gray-600 gap-1">
+                      <span className="text-gray-400 w-10 shrink-0">{formatTime(ts)}</span>
+                      <span className="shrink-0">{info.icon}</span>
+                      <span className="shrink-0">{info.name}</span>
+                      <span className="text-gray-400 shrink-0">{formatValue(actionId, val)}</span>
+                      <span className="ml-auto shrink-0 font-medium" style={{ color: diff > 0 ? '#10b981' : diff < 0 ? '#ef4444' : '#9ca3af' }}>
+                        {diff > 0 ? `+${diff.toFixed(1)}` : diff < 0 ? diff.toFixed(1) : '0.0'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }
