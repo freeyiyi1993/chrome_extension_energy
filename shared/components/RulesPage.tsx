@@ -48,16 +48,16 @@ export default function RulesPage({ data, onBack }: { data: StorageData; onBack:
               <span>睡眠超过 8h</span> <span className="text-gray-400">起点不超过上限</span>
             </li>
             <li className="py-1 border-b border-dashed border-gray-200 text-[10px] text-gray-400">
-              公式：精力 = 睡眠起点 - 今日已消耗。睡眠不足时精力会被压低，打卡越早已消耗越少恢复越多
+              睡眠设天花板，只降不升。早上填入时按比例压低精力，晚上填入时不变
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>主食/运动 (中恢复)</span> <span className="text-emerald-500 font-bold">+ {config.midHeal} 点/次</span>
+              <span>主食 (中恢复)</span> <span className="text-emerald-500 font-bold">+ {config.midHeal} 点/次</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
               <span>喝水/拉伸/小憩/冥想/肠道 (小恢复)</span> <span className="text-emerald-500 font-bold">+ {config.smallHeal} 点/次</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>运动不足 30 min</span> <span className="text-emerald-500 font-bold">按比例恢复</span>
+              <span>运动</span> <span className="text-gray-400">不恢复精力（仅计入完美一天）</span>
             </li>
           </ul>
         </div>
