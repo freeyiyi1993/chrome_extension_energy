@@ -13,6 +13,7 @@ export interface Config {
 export interface PomodoroState {
   running: boolean;
   timeLeft: number;
+  startedAt?: number;        // 番茄钟开始的绝对时间戳，用于跨设备同步
   count: number;
   perfectCount: number;
   consecutiveCount: number;
@@ -75,7 +76,7 @@ export const DEFAULT_TASK_DEFS: CustomTaskDef[] = [
   { id: 'sleep',    name: '睡眠',     icon: '💤', type: 'number',  healLevel: 'big',   unit: 'h',   placeholder: '8',     builtin: true, enabled: true, countsForPerfectDay: true },
   { id: 'exercise', name: '运动',     icon: '🏃', type: 'number',  healLevel: 'mid',   unit: 'min', placeholder: '目标:30', builtin: true, enabled: true, countsForPerfectDay: true },
   { id: 'meals',    name: '主食打卡', icon: '🍚', type: 'counter', healLevel: 'mid',   maxCount: 3, builtin: true, enabled: true, countsForPerfectDay: true },
-  { id: 'water',    name: '喝水打卡', icon: '💧', type: 'counter', healLevel: 'small', maxCount: 8, builtin: true, enabled: true, countsForPerfectDay: true },
+  { id: 'water',    name: '喝水打卡', icon: '💧', type: 'counter', healLevel: 'small', maxCount: 5, builtin: true, enabled: true, countsForPerfectDay: true },
   { id: 'stretch',  name: '拉伸放松', icon: '🧘', type: 'counter', healLevel: 'small', maxCount: 3, builtin: true, enabled: true, countsForPerfectDay: false },
   { id: 'nap',      name: '午间小憩', icon: '🌙', type: 'boolean', healLevel: 'small', builtin: true, enabled: true, countsForPerfectDay: false },
   { id: 'meditate', name: '正念冥想', icon: '🧠', type: 'counter', healLevel: 'small', maxCount: 3, builtin: true, enabled: true, countsForPerfectDay: false },
