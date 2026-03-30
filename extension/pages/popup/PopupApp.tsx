@@ -51,6 +51,7 @@ export default function PopupApp() {
           storage={storage}
           onOpenMenu={() => setMenuOpen(true)}
           onDataChange={fetchData}
+          onNavigate={navigateTo}
           compact
         />
       )}

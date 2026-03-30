@@ -1,6 +1,6 @@
-import { Menu, Play, RefreshCw } from 'lucide-react';
+import { Menu, Play, RefreshCw, BarChart2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { type StorageData, type CustomTaskDef, DEFAULT_TASK_DEFS } from '../types';
+import { type StorageData, type CustomTaskDef, type PageType, DEFAULT_TASK_DEFS } from '../types';
 import { type StorageInterface } from '../storage';
 
 
@@ -9,11 +9,12 @@ interface Props {
   storage: StorageInterface;
   onOpenMenu: () => void;
   onDataChange: () => void;
+  onNavigate?: (page: PageType) => void;
   flat?: boolean;
   compact?: boolean;
 }
 
-export default function MainDashboard({ data, storage, onOpenMenu, onDataChange, flat, compact }: Props) {
+export default function MainDashboard({ data, storage, onOpenMenu, onDataChange, onNavigate, flat, compact }: Props) {
   const { state, tasks, config } = data;
   const taskDefs = (data.taskDefs || DEFAULT_TASK_DEFS).filter(d => d.enabled);
 
@@ -246,11 +247,24 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
       </div>
 
       {/* Tasks - 动态渲染 */}
-      <div className={cardLast}>
+      <div className={card}>
         <div className="grid grid-cols-2 gap-2">
           {taskDefs.map(def => renderTask(def))}
         </div>
       </div>
+
+      {/* 数据统计入口 */}
+      {onNavigate && (
+        <div className={cardLast}>
+          <button
+            className="w-full h-[34px] rounded flex items-center justify-center gap-2 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-300 hover:bg-gray-200 transition-colors"
+            onClick={() => onNavigate('stats')}
+          >
+            <BarChart2 size={16} />
+            数据统计
+          </button>
+        </div>
+      )}
     </div>
   );
 }

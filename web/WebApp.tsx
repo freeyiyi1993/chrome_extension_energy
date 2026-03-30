@@ -141,6 +141,7 @@ export default function WebApp() {
                 storage={storage}
                 onOpenMenu={() => setMenuOpen(true)}
                 onDataChange={fetchData}
+                onNavigate={navigateTo}
                 flat
               />
             )}
