@@ -90,7 +90,7 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
       }
       const sleepRecovery = d.state.maxEnergy;
       const consumed = d.state.energyConsumed || 0;
-      d.state.energy = Math.max(d.state.energy, sleepRecovery - consumed);
+      d.state.energy = Math.min(d.state.maxEnergy, Math.max(d.state.energy, sleepRecovery - consumed));
     } else if (def.healLevel === 'big') {
       d.state.energy = Math.min(d.state.maxEnergy, d.state.energy + d.state.maxEnergy * currentConfig.bigHealRatio);
     } else if (def.healLevel === 'mid') {

@@ -131,6 +131,7 @@ export default function AuthPanel({ onSynced }: Props) {
 
   const handleLogout = async () => {
     if (user) await handlePush(user.uid, true);
+    localStorage.removeItem('energy_app_data');
     await signOut(auth);
   };
 

@@ -139,6 +139,7 @@ export default function SyncPanel({ onSynced }: Props) {
 
   const handleLogout = async () => {
     if (user) await handlePush(user.uid, true);
+    await chrome.storage.local.clear();
     await signOut(auth);
   };
 
