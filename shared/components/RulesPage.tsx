@@ -48,7 +48,7 @@ export default function RulesPage({ data, onBack }: { data: StorageData; onBack:
               <span>睡眠超过 8h</span> <span className="text-gray-400">起点不超过上限</span>
             </li>
             <li className="py-1 border-b border-dashed border-gray-200 text-[10px] text-gray-400">
-              公式：恢复后精力 = max(当前精力, 睡眠起点 - 今日已消耗)。打卡越早恢复越多，打卡晚了已消耗的精力回不来
+              公式：精力 = 睡眠起点 - 今日已消耗。睡眠不足时精力会被压低，打卡越早已消耗越少恢复越多
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
               <span>主食/运动 (中恢复)</span> <span className="text-emerald-500 font-bold">+ {config.midHeal} 点/次</span>
@@ -107,22 +107,16 @@ export default function RulesPage({ data, onBack }: { data: StorageData; onBack:
           <div className="font-bold text-[13px] mb-2 flex items-center gap-1">☁️ 同步规则</div>
           <ul className="list-none p-0 m-0 text-xs">
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>登录成功后</span> <span className="text-blue-500 font-bold">自动拉取云端数据</span>
+              <span>登录成功后</span> <span className="text-blue-500 font-bold">自动双向同步</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>每 60 秒</span> <span className="text-blue-500 font-bold">自动推送到云端</span>
+              <span>每 60 秒</span> <span className="text-blue-500 font-bold">自动双向同步</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
               <span>登出前</span> <span className="text-blue-500 font-bold">自动保存到云端</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>手动拉取</span> <span className="text-gray-500">比较时间戳，取更新方</span>
-            </li>
-            <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>强制拉取</span> <span className="text-red-500 font-bold">云端直接覆盖本地</span>
-            </li>
-            <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>手动推送</span> <span className="text-gray-500">本地覆盖云端</span>
+              <span>手动同步</span> <span className="text-gray-500">双向合并日志+任务+状态，结果写入双端</span>
             </li>
           </ul>
         </div>
