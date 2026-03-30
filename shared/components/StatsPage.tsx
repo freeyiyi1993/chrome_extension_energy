@@ -121,7 +121,7 @@ export default function StatsPage({ data, onBack }: Props) {
     for (let i = 0; i <= totalMins; i++) {
       if (diffByMin[i]) cumDiffs += diffByMin[i];
       const decay = totalDecay * (i / totalMins);
-      const e = Math.max(0, maxEnergy + cumDiffs - decay);
+      const e = maxEnergy + cumDiffs - decay;
 
       const t = new Date(today8AM + i * 60000);
       const h = t.getHours();
@@ -152,7 +152,7 @@ export default function StatsPage({ data, onBack }: Props) {
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          y: { min: 0, max: Math.ceil(maxEnergy * 1.1), title: { display: true, text: '精力', font: { size: 10 } }, ticks: { font: { size: 10 } } },
+          y: { max: Math.ceil(maxEnergy * 1.1), title: { display: true, text: '精力', font: { size: 10 } }, ticks: { font: { size: 10 } } },
           x: { ticks: { font: { size: 9 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } }
         }
       }

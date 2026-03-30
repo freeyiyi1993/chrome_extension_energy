@@ -155,7 +155,6 @@ export async function resetAllData(storage: StorageInterface, uid?: string): Pro
   let initialEnergy = config.maxEnergy;
   const decayRate = config.decayRate / 60;
   initialEnergy -= decayRate * minsPassedSince8AM;
-  if (initialEnergy < config.minEnergy) initialEnergy = config.minEnergy;
 
   await storage.set({
     dataResetAt,

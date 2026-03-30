@@ -92,10 +92,14 @@ npm run lint              # ESLint
 - **关键设计**: `MainDashboard` 和 `SettingsPage` 通过 props 接收 `storage: StorageInterface`
 - **状态**: 已完成
 
-### ADR-005: 睡眠与运动精力规则
-- **睡眠**: 不足 8h 直接扣减。公式: `energy -= maxEnergy × (8 - min(sleepHours, 8)) / 8`。睡 8h 不扣，睡 6h 扣 25%，睡 4h 扣 50%
+### ADR-005: 精力计算规则（无 clamp）
+- **核心原则**: 所有精力变化忠实累加，不设上下限，填写顺序不影响最终结果
+- **日切**: `energy = maxEnergy`（长期上限，受完美一天/糟糕一天影响）
+- **睡眠**: `energy -= maxEnergy × (8 - min(sleepHours, 8)) / 8`，直接扣减无下限
+- **恢复**: 主食 +midHeal/次，小恢复 +smallHeal/次，直接加无上限
+- **衰减**: tick 每分钟扣减，无 minEnergy 保底
 - **运动**: healLevel='none'，不恢复精力，仅计入完美一天判定
-- **原因**: 直接扣减语义清晰，不依赖 energyConsumed；运动是健康习惯追踪而非精力恢复手段
+- **原因**: clamp 导致填写顺序影响结果（如先填吃饭再填睡眠 vs 反过来），去掉 clamp 让每笔变化可追踪
 - **状态**: 已实现
 
 ### ADR-006: 完美一天动态判断

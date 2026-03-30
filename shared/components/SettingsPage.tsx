@@ -78,8 +78,6 @@ export default function SettingsPage({ data, storage, onBack, onSaved }: Props) 
     if (d.state) {
       const diff = config.maxEnergy - oldConfig.maxEnergy;
       d.state.maxEnergy += diff;
-      if (d.state.maxEnergy < config.minEnergy) d.state.maxEnergy = config.minEnergy;
-      if (d.state.energy > d.state.maxEnergy) d.state.energy = d.state.maxEnergy;
       await storage.set({ state: d.state });
     }
 
@@ -145,7 +143,6 @@ export default function SettingsPage({ data, storage, onBack, onSaved }: Props) 
       <div className="bg-white rounded-lg p-3 shadow-sm">
         <div className="font-bold mb-3 text-[13px]">📊 基础配置</div>
         <InputRow config={config} onChange={handleChange} label="默认精力上限" field="maxEnergy" min={10} />
-        <InputRow config={config} onChange={handleChange} label="最低精力保底" field="minEnergy" min={0} />
 
         <div className="font-bold my-3 text-[13px]">✨ 日常恢复</div>
         <InputRow config={config} onChange={handleChange} label="小恢复点数 (喝水/拉伸/小憩/冥想/肠道)" field="smallHeal" min={0} />

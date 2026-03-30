@@ -26,7 +26,6 @@ export async function initWebData() {
     }
 
     initialEnergy -= decayRate * minsPassedSince8AM;
-    if (initialEnergy < config.minEnergy) initialEnergy = config.minEnergy;
 
     await storage.set({
       state: {
@@ -92,7 +91,6 @@ async function tick() {
       });
 
       state.maxEnergy += maxEnergyDelta;
-      if (state.maxEnergy < config.minEnergy) state.maxEnergy = config.minEnergy;
     }
 
     data.state.logicalDate = todayStr;
@@ -128,7 +126,6 @@ async function tick() {
   const drop = decayRate * minsPassed;
   state.energyConsumed = (state.energyConsumed || 0) + drop;
   state.energy -= drop;
-  if (state.energy < config.minEnergy) state.energy = config.minEnergy;
 
   if (state.pomodoro.running) {
     state.pomodoro.timeLeft -= 60 * minsPassed;

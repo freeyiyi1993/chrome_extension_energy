@@ -37,7 +37,7 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
 
   const card = flat ? 'mb-3' : `bg-white rounded-lg ${compact ? 'p-2 mb-2' : 'p-3 mb-3'} shadow-sm`;
   const cardLast = flat ? '' : `bg-white rounded-lg ${compact ? 'p-2' : 'p-3'} shadow-sm`;
-  const energyPercent = Math.min(100, Math.max(0, (state.energy / state.maxEnergy) * 100));
+  const energyPercent = (state.energy / state.maxEnergy) * 100;
   let barColor = '#10b981';
   if (state.energy < 20) barColor = '#ef4444';
   else if (state.energy < 40) barColor = '#f59e0b';
@@ -86,16 +86,15 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
       d.tasks[def.id] = val;
     }
 
-    // 根据 healLevel 恢复精力
+    // 根据 healLevel 恢复精力（不做 clamp，忠实累加）
     if (def.id === 'sleep' && typeof val === 'number') {
-      const delta = d.state.maxEnergy * (8 - Math.min(val, 8)) / 8;
-      d.state.energy = Math.max(0, d.state.energy - delta);
+      d.state.energy -= d.state.maxEnergy * (8 - Math.min(val, 8)) / 8;
     } else if (def.healLevel === 'big') {
-      d.state.energy = Math.min(d.state.maxEnergy, d.state.energy + d.state.maxEnergy * currentConfig.bigHealRatio);
+      d.state.energy += d.state.maxEnergy * currentConfig.bigHealRatio;
     } else if (def.healLevel === 'mid') {
-      d.state.energy = Math.min(d.state.maxEnergy, d.state.energy + currentConfig.midHeal);
+      d.state.energy += currentConfig.midHeal;
     } else if (def.healLevel === 'small') {
-      d.state.energy = Math.min(d.state.maxEnergy, d.state.energy + currentConfig.smallHeal);
+      d.state.energy += currentConfig.smallHeal;
     }
     // healLevel === 'none' → 不恢复精力
 

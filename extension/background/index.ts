@@ -29,7 +29,6 @@ async function initData() {
     }
 
     initialEnergy -= decayRate * minsPassedSince8AM;
-    if (initialEnergy < config.minEnergy) initialEnergy = config.minEnergy;
 
     await chrome.storage.local.set({
       state: {
@@ -110,7 +109,6 @@ async function handleDayRollover(data: StorageData, todayStr: string) {
   });
 
   state.maxEnergy += maxEnergyDelta;
-  if (state.maxEnergy < config.minEnergy) state.maxEnergy = config.minEnergy;
 
   state.logicalDate = todayStr;
   state.energy = state.maxEnergy;
@@ -191,7 +189,6 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     const drop = decayRate * minsPassed;
     state.energyConsumed = (state.energyConsumed || 0) + drop;
     state.energy -= drop;
-    if (state.energy < config.minEnergy) state.energy = config.minEnergy;
 
     if (state.energy < 20 && !state.lowEnergyReminded) {
       state.lowEnergyReminded = true;

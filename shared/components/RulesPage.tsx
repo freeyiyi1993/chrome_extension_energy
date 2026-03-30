@@ -3,7 +3,7 @@ import { type StorageData, type Config, DEFAULT_TASK_DEFS } from '../types';
 
 const DEFAULT_CONFIG: Config = {
   maxEnergy: 65,
-  minEnergy: 5,
+  minEnergy: 5, // 保留字段兼容，但不再用于 clamp
   smallHeal: 2,
   midHeal: 5,
   bigHealRatio: 0.2,
@@ -36,16 +36,19 @@ export default function RulesPage({ data, onBack }: { data: StorageData; onBack:
           <div className="font-bold text-[13px] mb-2 flex items-center gap-1">🌱 日常恢复</div>
           <ul className="list-none p-0 m-0 text-xs">
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>每日 8:00 基础恢复</span> <span className="text-emerald-500 font-bold">恢复到上限 100%</span>
+              <span>每日 8:00 基础恢复</span> <span className="text-emerald-500 font-bold">重置为上限值</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>主食 (中恢复)</span> <span className="text-emerald-500 font-bold">+ {config.midHeal} 点/次</span>
+              <span>主食 (中恢复)</span> <span className="text-emerald-500 font-bold">+ {config.midHeal} 点/次（无上限）</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>喝水/拉伸/小憩/冥想/肠道 (小恢复)</span> <span className="text-emerald-500 font-bold">+ {config.smallHeal} 点/次</span>
+              <span>喝水/拉伸/小憩/冥想/肠道 (小恢复)</span> <span className="text-emerald-500 font-bold">+ {config.smallHeal} 点/次（无上限）</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
               <span>运动</span> <span className="text-gray-400">不恢复精力（仅计入完美一天）</span>
+            </li>
+            <li className="py-1 text-[10px] text-gray-400">
+              所有精力变化忠实累加，不设上下限，填写顺序不影响结果
             </li>
           </ul>
         </div>
@@ -54,7 +57,7 @@ export default function RulesPage({ data, onBack }: { data: StorageData; onBack:
           <div className="font-bold text-[13px] mb-2 flex items-center gap-1">🔥 日常消耗</div>
           <ul className="list-none p-0 m-0 text-xs">
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>睡眠不足 8h</span> <span className="text-red-500 font-bold">精力 -= 上限 × (8-时数)/8</span>
+              <span>睡眠不足 8h</span> <span className="text-red-500 font-bold">精力 -= 上限 × (8-时数)/8（无下限）</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
               <span>基础自然流失</span> <span className="text-red-500 font-bold">- {config.decayRate} 点/小时</span>
