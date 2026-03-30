@@ -83,15 +83,15 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
 
     // 根据 healLevel 恢复精力
     if (def.id === 'sleep' && typeof val === 'number') {
-      // 睡眠恢复规则：睡眠直接设定精力 = ceiling - consumed
-      // ceiling = maxEnergy × sleepRatio，sleepRatio = min(sleepHours/8, 1)
-      // 睡眠不足 → 天花板低于当前值 → 压低精力；睡眠充足 → 恢复精力
-      // 注意：睡眠不足只降低恢复量，不改 maxEnergy
+      // 睡眠恢复规则：睡眠设定精力天花板，只降不升
+      // ceiling = maxEnergy × min(sleepHours/8, 1)
+      // 睡眠不足 → ceiling 低于当前精力 → 压低；睡眠充足 → 不变
       const hours = Math.min(val, 8);
       const sleepRatio = hours / 8; // 0~1
-      const ceiling = d.state.maxEnergy * sleepRatio; // 睡眠决定的精力天花板
+      const ceiling = d.state.maxEnergy * sleepRatio;
       const consumed = d.state.energyConsumed || 0;
-      d.state.energy = Math.min(d.state.maxEnergy, Math.max(0, ceiling - consumed));
+      const sleepEnergy = Math.max(0, ceiling - consumed);
+      d.state.energy = Math.min(d.state.energy, sleepEnergy);
     } else if (def.healLevel === 'big') {
       d.state.energy = Math.min(d.state.maxEnergy, d.state.energy + d.state.maxEnergy * currentConfig.bigHealRatio);
     } else if (def.healLevel === 'mid') {
