@@ -117,8 +117,12 @@ function mergeState(local: AppState | undefined, cloud: AppState | undefined): A
 
   // pomodoro.running: 任一端 running=true 则保持 true
   const running = lp.running || cp.running;
-  // pomodoro.timeLeft: running 时取较低值（更接近完成），否则取本地
-  const timeLeft = running ? Math.min(lp.timeLeft, cp.timeLeft) : lp.timeLeft;
+  // pomodoro.timeLeft: 只有一端 running 时用该端的 timeLeft（另一端可能是旧会话残留值）
+  // 双端都 running 时取较低值（更接近完成）
+  const timeLeft = (lp.running && cp.running) ? Math.min(lp.timeLeft, cp.timeLeft)
+    : lp.running ? lp.timeLeft
+    : cp.running ? cp.timeLeft
+    : lp.timeLeft;
 
   return {
     energy: Math.min(local.energy, cloud.energy),
