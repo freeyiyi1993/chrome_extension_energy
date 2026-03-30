@@ -101,6 +101,7 @@ export interface StorageData {
   taskDefs?: CustomTaskDef[];
   stats?: any[];
   logs?: AppLogEntry[];
+  dataResetAt?: number;
 }
 
 // 页面类型定义（供 MenuPanel 等组件使用）

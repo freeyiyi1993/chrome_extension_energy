@@ -294,8 +294,10 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
           return now.getTime();
         })();
 
+        const dataResetAt = data.dataResetAt || 0;
+        const logCutoff = Math.max(todayStart, dataResetAt);
         const todayLogs = (data.logs || [])
-          .filter((log): log is CompactLog => Array.isArray(log) && log.length === 4 && log[0] >= todayStart)
+          .filter((log): log is CompactLog => Array.isArray(log) && log.length === 4 && log[0] >= logCutoff)
           .sort((a, b) => b[0] - a[0])
           .slice(0, 20);
 

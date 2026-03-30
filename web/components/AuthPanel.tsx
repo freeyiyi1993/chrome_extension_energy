@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, type User } from 'firebase/auth';
 import { auth, googleProvider } from '../../shared/firebase';
-import { syncToCloud, sync } from '../storage';
-import { Cloud, LogIn, LogOut, RefreshCw, Mail, ArrowLeft } from 'lucide-react';
+import { syncToCloud, sync, resetAllData } from '../storage';
+import { Cloud, LogIn, LogOut, RefreshCw, Mail, ArrowLeft, Trash2 } from 'lucide-react';
 
 interface Props {
   onSynced: () => void;
@@ -107,6 +107,17 @@ export default function AuthPanel({ onSynced }: Props) {
     }
   };
 
+  const handleResetData = async () => {
+    if (!confirm('确认删除所有数据？此操作会清除所有端的历史记录，不可撤销。')) return;
+    try {
+      await resetAllData(user?.uid);
+      showMessage('数据已清除');
+      onSynced();
+    } catch (err: any) {
+      showMessage(`清除失败: ${err.message}`);
+    }
+  };
+
   const handleLogout = async () => {
     if (user) await syncToCloud(user.uid);
     localStorage.removeItem('energy_app_data');
@@ -190,6 +201,13 @@ export default function AuthPanel({ onSynced }: Props) {
             title="双向同步"
           >
             <RefreshCw size={10} className={syncing ? 'animate-spin' : ''} /> 同步
+          </button>
+          <button
+            className="text-gray-400 hover:text-red-500 transition-colors"
+            onClick={handleResetData}
+            title="删除所有数据"
+          >
+            <Trash2 size={12} />
           </button>
           <button
             className="text-gray-400 hover:text-red-500 transition-colors"

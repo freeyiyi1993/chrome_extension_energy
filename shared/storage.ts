@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
-import { type StorageData, type AppLogEntry, type Tasks, type AppState } from './types';
+import { type StorageData, type AppLogEntry, type Tasks, type AppState, DEFAULT_CONFIG, DEFAULT_TASK_DEFS } from './types';
+import { getLogicalDate, getLogical8AM, buildEmptyTasks } from './utils/time';
 
 // 统一存储接口：各平台（Chrome 扩展 / Web）各自实现
 export interface StorageInterface {
@@ -51,7 +52,7 @@ export async function syncFromCloud(uid: string): Promise<StorageData | null> {
 // --- 日志合并工具 ---
 
 /** 从任意格式的日志条目中提取 timestamp */
-function getLogTimestamp(entry: AppLogEntry): number {
+export function getLogTimestamp(entry: AppLogEntry): number {
   if (Array.isArray(entry)) return entry[0]; // CompactLog
   if (entry.t) return entry.t;               // 中间版本
   if (entry.time) return new Date(entry.time).getTime(); // 旧版本
@@ -141,6 +142,42 @@ function mergeState(local: AppState | undefined, cloud: AppState | undefined): A
   };
 }
 
+/** 重置所有数据：写入 dataResetAt 时间戳，各端忽略此前数据 */
+export async function resetAllData(storage: StorageInterface, uid?: string): Promise<void> {
+  const dataResetAt = Date.now();
+  const existing = await storage.get(['config', 'taskDefs']) as StorageData;
+  const config = existing.config || DEFAULT_CONFIG;
+  const taskDefs = existing.taskDefs || DEFAULT_TASK_DEFS;
+
+  const now = Date.now();
+  const startOfToday = getLogical8AM();
+  const minsPassedSince8AM = Math.max(0, (now - startOfToday) / 60000);
+  let initialEnergy = config.maxEnergy;
+  const decayRate = config.decayRate / 60;
+  initialEnergy -= decayRate * minsPassedSince8AM;
+  if (initialEnergy < config.minEnergy) initialEnergy = config.minEnergy;
+
+  await storage.set({
+    dataResetAt,
+    state: {
+      logicalDate: getLogicalDate(),
+      maxEnergy: config.maxEnergy,
+      energy: initialEnergy,
+      lastUpdateTime: now,
+      lowEnergyReminded: false,
+      energyConsumed: 0,
+      pomodoro: { running: false, timeLeft: 25 * 60, count: 0, perfectCount: 0, consecutiveCount: 0 },
+    },
+    tasks: buildEmptyTasks(taskDefs),
+    logs: [],
+    stats: [],
+  });
+
+  if (uid) {
+    await syncToCloud(storage, uid);
+  }
+}
+
 /** 双向同步：合并本地与云端数据，写回双端 */
 export async function sync(storage: StorageInterface, uid: string): Promise<'synced' | 'no_change' | 'empty'> {
   const cloudData = await syncFromCloud(uid);
@@ -153,15 +190,52 @@ export async function sync(storage: StorageInterface, uid: string): Promise<'syn
 
   const localData = await storage.get(null) as StorageData;
 
+  // --- dataResetAt 合并：取较大值 ---
+  const localResetAt = localData.dataResetAt || 0;
+  const cloudResetAt = cloudData.dataResetAt || 0;
+  const mergedResetAt = Math.max(localResetAt, cloudResetAt);
+  const resetChanged = localResetAt !== cloudResetAt;
+
   const localLogs = localData.logs || [];
   const cloudLogs = cloudData.logs || [];
 
-  // 合并日志
-  const mergedLogs = mergeLogs(localLogs, cloudLogs);
-  // 合并任务
-  const mergedTasks = mergeTasks(localData.tasks, cloudData.tasks);
-  // 合并 state
-  const mergedState = mergeState(localData.state, cloudData.state);
+  // 合并日志，并按 dataResetAt 过滤
+  let mergedLogs = mergeLogs(localLogs, cloudLogs);
+  if (mergedResetAt > 0) {
+    mergedLogs = mergedLogs.filter(log => getLogTimestamp(log) >= mergedResetAt);
+  }
+
+  // 合并 stats，按 dataResetAt 过滤
+  const localStats = localData.stats || [];
+  const cloudStats = cloudData.stats || [];
+  let mergedStats: any[];
+  if (mergedResetAt > 0) {
+    const resetDateStr = new Date(mergedResetAt).toLocaleDateString('en-CA');
+    // 取并集按 date 去重，再过滤
+    const seen = new Set<string>();
+    mergedStats = [];
+    for (const s of [...localStats, ...cloudStats]) {
+      if (!seen.has(s.date) && s.date >= resetDateStr) {
+        seen.add(s.date);
+        mergedStats.push(s);
+      }
+    }
+    mergedStats.sort((a, b) => a.date.localeCompare(b.date));
+  } else {
+    mergedStats = localStats; // 无 reset 时保持本地 stats
+  }
+
+  // state 和 tasks：如果 dataResetAt 不一致，用重置方的版本
+  let mergedTasks: Tasks;
+  let mergedState: AppState | undefined;
+  if (resetChanged) {
+    const winner = localResetAt > cloudResetAt ? localData : cloudData;
+    mergedState = winner.state;
+    mergedTasks = winner.tasks || {};
+  } else {
+    mergedTasks = mergeTasks(localData.tasks, cloudData.tasks);
+    mergedState = mergeState(localData.state, cloudData.state);
+  }
 
   // 检查是否有变化
   const logsChanged = mergedLogs.length !== localLogs.length || mergedLogs.length !== cloudLogs.length;
@@ -169,8 +243,10 @@ export async function sync(storage: StorageInterface, uid: string): Promise<'syn
     JSON.stringify(mergedTasks) !== JSON.stringify(cloudData.tasks);
   const stateChanged = JSON.stringify(mergedState) !== JSON.stringify(localData.state) ||
     JSON.stringify(mergedState) !== JSON.stringify(cloudData.state);
+  const statsChanged = JSON.stringify(mergedStats) !== JSON.stringify(localStats) ||
+    JSON.stringify(mergedStats) !== JSON.stringify(cloudStats);
 
-  if (!logsChanged && !tasksChanged && !stateChanged) {
+  if (!logsChanged && !tasksChanged && !stateChanged && !statsChanged && !resetChanged) {
     return 'no_change';
   }
 
@@ -179,6 +255,8 @@ export async function sync(storage: StorageInterface, uid: string): Promise<'syn
     ...localData,
     logs: mergedLogs,
     tasks: mergedTasks,
+    stats: mergedStats,
+    dataResetAt: mergedResetAt || undefined,
   };
   if (mergedState) {
     mergedData.state = mergedState;

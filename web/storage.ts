@@ -3,6 +3,7 @@ import {
   type StorageInterface,
   syncToCloud as sharedSyncToCloud,
   sync as sharedSync,
+  resetAllData as sharedResetAllData,
 } from '../shared/storage';
 
 // Web 版使用 localStorage
@@ -49,4 +50,8 @@ export async function syncToCloud(uid: string): Promise<void> {
 
 export async function sync(uid: string): Promise<'synced' | 'no_change' | 'empty'> {
   return sharedSync(storage, uid);
+}
+
+export async function resetAllData(uid?: string): Promise<void> {
+  return sharedResetAllData(storage, uid);
 }
