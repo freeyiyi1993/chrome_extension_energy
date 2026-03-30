@@ -54,7 +54,7 @@ describe('DEFAULT_TASK_DEFS', () => {
   it('should have correct heal levels', () => {
     const healMap: Record<string, CustomTaskDef['healLevel']> = {
       sleep: 'big',
-      exercise: 'none',
+      exercise: 'mid',
       meals: 'mid',
       water: 'small',
       stretch: 'small',

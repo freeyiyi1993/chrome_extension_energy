@@ -45,7 +45,7 @@ export default function RulesPage({ data, onBack }: { data: StorageData; onBack:
               <span>喝水/拉伸/小憩/冥想/肠道 (小恢复)</span> <span className="text-emerald-500 font-bold">+ {config.smallHeal} 点/次（无上限）</span>
             </li>
             <li className="flex justify-between py-1 border-b border-dashed border-gray-200 last:border-0">
-              <span>运动</span> <span className="text-gray-400">不恢复精力（仅计入完美一天）</span>
+              <span>运动 (中恢复)</span> <span className="text-emerald-500 font-bold">+ {config.midHeal} 点（无上限）</span>
             </li>
             <li className="py-1 text-[10px] text-gray-400">
               所有精力变化忠实累加，不设上下限，填写顺序不影响结果

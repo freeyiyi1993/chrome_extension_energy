@@ -98,7 +98,7 @@ npm run lint              # ESLint
 - **睡眠**: `energy -= maxEnergy × (8 - min(sleepHours, 8)) / 8`，直接扣减无下限
 - **恢复**: 主食 +midHeal/次，小恢复 +smallHeal/次，直接加无上限
 - **衰减**: tick 每分钟扣减，无 minEnergy 保底
-- **运动**: healLevel='none'，不恢复精力，仅计入完美一天判定
+- **运动**: healLevel='mid'，恢复中等精力
 - **原因**: clamp 导致填写顺序影响结果（如先填吃饭再填睡眠 vs 反过来），去掉 clamp 让每笔变化可追踪
 - **状态**: 已实现
 
