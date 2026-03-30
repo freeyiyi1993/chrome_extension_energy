@@ -130,9 +130,19 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Google OAuth: 使用 chrome.identity.getAuthToken，
 // Chrome 内部处理 OAuth 流程，无需 redirect URI
+// 先清除缓存 token 再获取，避免拿到过期 token 导致需要点两次
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === 'GOOGLE_LOGIN') {
-    chrome.identity.getAuthToken({ interactive: true })
+    // 先尝试获取（可能是缓存的），拿到后清除再重新获取一个新鲜 token
+    chrome.identity.getAuthToken({ interactive: false })
+      .then(result => {
+        const cached = typeof result === 'string' ? result : result.token;
+        if (cached) {
+          return chrome.identity.removeCachedAuthToken({ token: cached });
+        }
+      })
+      .catch(() => { /* 无缓存 token，忽略 */ })
+      .then(() => chrome.identity.getAuthToken({ interactive: true }))
       .then(result => {
         const token = typeof result === 'string' ? result : result.token;
         if (!token) {
