@@ -96,12 +96,7 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
     } else if (def.healLevel === 'big') {
       d.state.energy = Math.min(d.state.maxEnergy, d.state.energy + d.state.maxEnergy * currentConfig.bigHealRatio);
     } else if (def.healLevel === 'mid') {
-      if (def.id === 'exercise' && typeof val === 'number') {
-        const ratio = val >= 30 ? 1 : val / 30;
-        d.state.energy = Math.min(d.state.maxEnergy, d.state.energy + currentConfig.midHeal * ratio);
-      } else {
-        d.state.energy = Math.min(d.state.maxEnergy, d.state.energy + currentConfig.midHeal);
-      }
+      d.state.energy = Math.min(d.state.maxEnergy, d.state.energy + currentConfig.midHeal);
     } else if (def.healLevel === 'small') {
       d.state.energy = Math.min(d.state.maxEnergy, d.state.energy + currentConfig.smallHeal);
     }

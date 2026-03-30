@@ -73,7 +73,7 @@ export interface CustomTaskDef {
 // 内置默认任务列表
 export const DEFAULT_TASK_DEFS: CustomTaskDef[] = [
   { id: 'sleep',    name: '睡眠',     icon: '💤', type: 'number',  healLevel: 'big',   unit: 'h',   placeholder: '8',     builtin: true, enabled: true, countsForPerfectDay: true },
-  { id: 'exercise', name: '运动',     icon: '🏃', type: 'number',  healLevel: 'mid',   unit: 'min', placeholder: '目标:30', builtin: true, enabled: true, countsForPerfectDay: true },
+  { id: 'exercise', name: '运动',     icon: '🏃', type: 'number',  healLevel: 'none',  unit: 'min', placeholder: '目标:30', builtin: true, enabled: true, countsForPerfectDay: true },
   { id: 'meals',    name: '主食打卡', icon: '🍚', type: 'counter', healLevel: 'mid',   maxCount: 3, builtin: true, enabled: true, countsForPerfectDay: true },
   { id: 'water',    name: '喝水打卡', icon: '💧', type: 'counter', healLevel: 'small', maxCount: 3, builtin: true, enabled: true, countsForPerfectDay: true },
   { id: 'stretch',  name: '拉伸放松', icon: '🧘', type: 'counter', healLevel: 'small', maxCount: 3, builtin: true, enabled: true, countsForPerfectDay: false },
