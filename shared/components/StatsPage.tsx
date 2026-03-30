@@ -87,7 +87,7 @@ export default function StatsPage({ data, onBack }: Props) {
     };
   }, [data]);
 
-  // 当天精力流失折线图
+  // 当天精力流失折线图（逐分钟）
   useEffect(() => {
     if (!todayChartRef.current || !data.state) return;
 
@@ -95,36 +95,40 @@ export default function StatsPage({ data, onBack }: Props) {
     const curEnergy = data.state.energy;
     const now = Date.now();
 
-    // 今天 8:00 的时间戳
     const [y, m, d] = getLogicalDate().split('-').map(Number);
     const today8AM = new Date(y, m - 1, d, 8, 0, 0).getTime();
 
-    // 筛选今日 CompactLog
+    // 筛选今日日志，建立 timestamp → energyDiff 映射（按分钟合并）
     const todayLogs = (data.logs || [])
       .filter((log): log is CompactLog => Array.isArray(log) && log.length === 4 && log[0] >= today8AM && log[0] <= now)
       .sort((a, b) => a[0] - b[0]);
 
-    // 总衰减 = maxEnergy + 所有正向 energyDiff 之和 - 所有负向 energyDiff 绝对值 - curEnergy
+    const diffByMin: Record<number, number> = {};
+    for (const log of todayLogs) {
+      const minKey = Math.floor((log[0] - today8AM) / 60000);
+      diffByMin[minKey] = (diffByMin[minKey] || 0) + log[3];
+    }
+
+    // 总衰减 = maxEnergy + sum(diffs) - curEnergy，按时间等比分摊
     const totalDiffs = todayLogs.reduce((sum, log) => sum + log[3], 0);
     const totalDecay = maxEnergy + totalDiffs - curEnergy;
-    const timeSpan = now - today8AM;
+    const totalMins = Math.max(1, Math.floor((now - today8AM) / 60000));
 
-    // 构建数据点: (时间, 精力)
-    const points: { t: number; e: number }[] = [{ t: today8AM, e: maxEnergy }];
+    // 逐分钟生成数据点
+    const labels: string[] = [];
+    const energyData: number[] = [];
     let cumDiffs = 0;
-    for (const log of todayLogs) {
-      cumDiffs += log[3];
-      const elapsed = log[0] - today8AM;
-      const decay = timeSpan > 0 ? totalDecay * (elapsed / timeSpan) : 0;
-      points.push({ t: log[0], e: Math.max(0, maxEnergy + cumDiffs - decay) });
-    }
-    points.push({ t: now, e: curEnergy });
+    for (let i = 0; i <= totalMins; i++) {
+      if (diffByMin[i]) cumDiffs += diffByMin[i];
+      const decay = totalDecay * (i / totalMins);
+      const e = Math.max(0, maxEnergy + cumDiffs - decay);
 
-    const labels = points.map(p => {
-      const dt = new Date(p.t);
-      return `${dt.getHours()}h`;
-    });
-    const energyData = points.map(p => Number(p.e.toFixed(1)));
+      const t = new Date(today8AM + i * 60000);
+      const h = t.getHours();
+      const min = t.getMinutes();
+      labels.push(min === 0 ? `${h}:00` : '');
+      energyData.push(Number(e.toFixed(1)));
+    }
 
     if (todayChartInstance.current) todayChartInstance.current.destroy();
 
@@ -138,8 +142,9 @@ export default function StatsPage({ data, onBack }: Props) {
           borderColor: '#3b82f6',
           backgroundColor: 'rgba(59,130,246,0.1)',
           fill: true,
-          tension: 0.3,
-          pointRadius: 3,
+          tension: 0.2,
+          pointRadius: 0,
+          borderWidth: 1.5,
         }]
       },
       options: {
@@ -148,7 +153,7 @@ export default function StatsPage({ data, onBack }: Props) {
         plugins: { legend: { display: false } },
         scales: {
           y: { min: 0, max: Math.ceil(maxEnergy * 1.1), title: { display: true, text: '精力', font: { size: 10 } }, ticks: { font: { size: 10 } } },
-          x: { ticks: { font: { size: 9 }, maxRotation: 0 } }
+          x: { ticks: { font: { size: 9 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 12 } }
         }
       }
     });
@@ -247,15 +252,17 @@ export default function StatsPage({ data, onBack }: Props) {
       </div>
 
       <div className="bg-white rounded-lg p-2.5 shadow-sm">
-        <div className="flex gap-2 mb-2">
-          <button
-            className={`text-xs px-2.5 py-1 rounded-full transition-colors ${chartTab === 'today' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-            onClick={() => setChartTab('today')}
-          >今日精力</button>
-          <button
-            className={`text-xs px-2.5 py-1 rounded-full transition-colors ${chartTab === 'trend' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-            onClick={() => setChartTab('trend')}
-          >历史趋势</button>
+        <div className="flex justify-center mb-2">
+          <div className="inline-flex rounded-md overflow-hidden border border-gray-200">
+            <button
+              className={`text-xs px-3 py-1 transition-colors ${chartTab === 'today' ? 'bg-blue-500 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+              onClick={() => setChartTab('today')}
+            >今日精力</button>
+            <button
+              className={`text-xs px-3 py-1 transition-colors border-l border-gray-200 ${chartTab === 'trend' ? 'bg-blue-500 text-white' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
+              onClick={() => setChartTab('trend')}
+            >历史趋势</button>
+          </div>
         </div>
 
         <div className="w-full h-[160px] mb-3" style={{ display: chartTab === 'trend' ? 'block' : 'none' }}>
