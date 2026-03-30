@@ -17,6 +17,7 @@ export default function StatsPage({ data, onBack }: Props) {
   const chartInstance = useRef<Chart | null>(null);
   const todayChartRef = useRef<HTMLCanvasElement>(null);
   const todayChartInstance = useRef<Chart | null>(null);
+  const [chartTab, setChartTab] = useState<'today' | 'trend'>('today');
   const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
 
   const toggleDate = (dateStr: string) => {
@@ -121,7 +122,7 @@ export default function StatsPage({ data, onBack }: Props) {
 
     const labels = points.map(p => {
       const dt = new Date(p.t);
-      return `${dt.getHours().toString().padStart(2, '0')}:${dt.getMinutes().toString().padStart(2, '0')}`;
+      return `${dt.getHours()}h`;
     });
     const energyData = points.map(p => Number(p.e.toFixed(1)));
 
@@ -246,12 +247,21 @@ export default function StatsPage({ data, onBack }: Props) {
       </div>
 
       <div className="bg-white rounded-lg p-2.5 shadow-sm">
-        <div className="w-full h-[160px] mb-3">
-          <canvas ref={chartRef}></canvas>
+        <div className="flex gap-2 mb-2">
+          <button
+            className={`text-xs px-2.5 py-1 rounded-full transition-colors ${chartTab === 'today' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+            onClick={() => setChartTab('today')}
+          >今日精力</button>
+          <button
+            className={`text-xs px-2.5 py-1 rounded-full transition-colors ${chartTab === 'trend' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+            onClick={() => setChartTab('trend')}
+          >历史趋势</button>
         </div>
 
-        <div className="text-xs font-bold text-gray-600 mb-1 mt-2">今日精力曲线</div>
-        <div className="w-full h-[140px] mb-3">
+        <div className="w-full h-[160px] mb-3" style={{ display: chartTab === 'trend' ? 'block' : 'none' }}>
+          <canvas ref={chartRef}></canvas>
+        </div>
+        <div className="w-full h-[160px] mb-3" style={{ display: chartTab === 'today' ? 'block' : 'none' }}>
           <canvas ref={todayChartRef}></canvas>
         </div>
 

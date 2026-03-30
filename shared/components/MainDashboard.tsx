@@ -89,7 +89,7 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
     // 根据 healLevel 恢复精力
     if (def.id === 'sleep' && typeof val === 'number') {
       const delta = d.state.maxEnergy * (8 - Math.min(val, 8)) / 8;
-      d.state.energy -= delta;
+      d.state.energy = Math.max(0, d.state.energy - delta);
     } else if (def.healLevel === 'big') {
       d.state.energy = Math.min(d.state.maxEnergy, d.state.energy + d.state.maxEnergy * currentConfig.bigHealRatio);
     } else if (def.healLevel === 'mid') {
