@@ -180,6 +180,7 @@ export function setPomodoroCompleteCallback(cb: ((forcedBreak: boolean) => void)
 
 export function startWebTicker() {
   if (tickInterval) return;
+  tick(); // 立即执行一次，确保日切等逻辑不延迟
   tickInterval = setInterval(tick, 60_000); // 每分钟
 }
 

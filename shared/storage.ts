@@ -113,6 +113,13 @@ function mergeState(local: AppState | undefined, cloud: AppState | undefined): A
   if (!local) return cloud;
   if (!cloud) return local;
 
+  // 跨日合并：一端已日切、另一端未日切时，直接取已日切一方的 state
+  // 否则 Math.min(energy) 会把满精力拉到昨天的低精力
+  if (local.logicalDate !== cloud.logicalDate) {
+    const newer = local.logicalDate > cloud.logicalDate ? local : cloud;
+    return { ...newer, lastUpdateTime: Date.now() };
+  }
+
   const lp = local.pomodoro;
   const cp = cloud.pomodoro;
 
@@ -133,7 +140,7 @@ function mergeState(local: AppState | undefined, cloud: AppState | undefined): A
     energy: Math.min(local.energy, cloud.energy),
     maxEnergy: Math.min(local.maxEnergy, cloud.maxEnergy),
     energyConsumed: Math.max(local.energyConsumed || 0, cloud.energyConsumed || 0),
-    logicalDate: local.logicalDate >= cloud.logicalDate ? local.logicalDate : cloud.logicalDate,
+    logicalDate: local.logicalDate,
     lowEnergyReminded: local.lowEnergyReminded || cloud.lowEnergyReminded,
     lastUpdateTime: Date.now(),
     pomodoro: {
@@ -237,7 +244,15 @@ export async function sync(storage: StorageInterface, uid: string): Promise<'syn
     mergedState = winner.state;
     mergedTasks = winner.tasks || {};
   } else {
-    mergedTasks = mergeTasks(localData.tasks, cloudData.tasks);
+    // 跨日合并：一端已日切、另一端未日切，tasks 也取已日切一方
+    const localDate = localData.state?.logicalDate || '';
+    const cloudDate = cloudData.state?.logicalDate || '';
+    if (localDate !== cloudDate) {
+      const newer = localDate > cloudDate ? localData : cloudData;
+      mergedTasks = newer.tasks || {};
+    } else {
+      mergedTasks = mergeTasks(localData.tasks, cloudData.tasks);
+    }
     mergedState = mergeState(localData.state, cloudData.state);
   }
 
