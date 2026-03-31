@@ -1,4 +1,4 @@
-import { Menu, Play, RefreshCw, BarChart2 } from 'lucide-react';
+import { Menu, Play, BarChart2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { type StorageData, type CustomTaskDef, type PageType, type CompactLog, DEFAULT_TASK_DEFS } from '../types';
 import { type StorageInterface } from '../storage';
@@ -63,13 +63,6 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
     onDataChange();
   };
 
-  const resetPomo = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const nowTs = Date.now();
-    const newState = { ...state, pomodoro: { ...state.pomodoro, status: 'idle' as const, startedAt: undefined, updatedAt: nowTs } };
-    await storage.set({ state: newState });
-    onDataChange();
-  };
 
   const handleTaskSave = async (def: CustomTaskDef, val: number | boolean) => {
     const isCounter = def.type === 'counter';
@@ -215,15 +208,7 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
 
       {/* Pomodoro */}
       <div className={card}>
-        <div className={`relative ${compact ? 'w-[110px]' : 'w-[140px]'} mx-auto`}>
-          <div
-            className={`absolute -top-1 -right-1 ${compact ? 'w-6 h-6' : 'w-7 h-7'} flex items-center justify-center bg-gray-100 rounded-full cursor-pointer z-20 opacity-60 hover:opacity-100 hover:bg-gray-200 hover:rotate-15 transition-all shadow-sm text-sm`}
-            onClick={resetPomo}
-            title="重新开始"
-          >
-            <RefreshCw size={compact ? 12 : 14} />
-          </div>
-
+        <div className={`${compact ? 'w-[110px]' : 'w-[140px]'} mx-auto`}>
           <div
             className={`${compact ? 'w-[110px] h-[110px]' : 'w-[140px] h-[140px]'} rounded-full relative flex items-center justify-center cursor-pointer transition-transform hover:scale-105`}
             style={{
