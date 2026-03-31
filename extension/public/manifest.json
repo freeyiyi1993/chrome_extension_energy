@@ -9,9 +9,19 @@
     "client_id": "436454572775-vt8fsho5l7t0nmv5so1jgdkglknanjoq.apps.googleusercontent.com",
     "scopes": ["openid", "email", "profile"]
   },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
     "default_popup": "extension/pages/popup/index.html",
-    "default_title": "精力管理"
+    "default_title": "精力管理",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "background": {
     "service_worker": "background.js",
