@@ -141,6 +141,12 @@ npm run lint              # ESLint
 - **同步策略**: `dataResetAt` 取两端最大值；若不一致，state/tasks 取重置方版本；日志和 stats 按时间戳过滤
 - **状态**: 已实现
 
+### ADR-012: 番茄钟原子实例同步
+- **决策**: `PomodoroState` 散装字段改为 `PomodoroTimer` 原子实例。`running`/`timeLeft` → `status('ongoing'|'idle')`，`timeLeft` 从 `startedAt` 实时推算。新增 `updatedAt` 字段，合并时取 `updatedAt` 更大的一方整体覆盖。`count`/`perfectCount` 拆到 `AppState`（`pomoCount`/`pomoPerfectCount`），继续用 `Math.max` 合并
+- **原因**: 旧逻辑 `running = lp.running || cp.running` 导致一端停止/重置番茄钟后另一端同步不生效；Firestore `merge:true` 不删除 `undefined` 字段导致残留 `startedAt` 污染合并
+- **迁移**: 各端 init 和 `syncFromCloud` 自动检测旧格式并转换
+- **状态**: 已实现
+
 ## Current Status
 - [x] 插件基础功能 (MVP)
 - [x] 节假日模式 + 日志压缩优化
@@ -165,6 +171,7 @@ npm run lint              # ESLint
 - [x] 睡眠恢复修正 (不足时压低精力，去掉只升不降的保底)
 - [x] 主页今日日志流 (数据统计按钮下方显示当日操作记录)
 - [x] 删除所有数据 (dataResetAt 时间戳软删除，跨设备生效)
+- [x] 番茄钟原子实例同步 (PomodoroTimer + updatedAt 整体覆盖，count 拆到 AppState)
 
 ## 交付质量规范
 
