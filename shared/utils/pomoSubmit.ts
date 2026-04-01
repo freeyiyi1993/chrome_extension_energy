@@ -1,8 +1,6 @@
 import { type StorageData } from '../types';
 import { type StorageInterface } from '../storage';
-
-/** 番茄钟完成日志的 actionId */
-const POMO_ACTION_ID = 8;
+import { POMO_ACTION_ID } from '../constants/actionMapping';
 
 /**
  * 提交番茄钟完成记录（共享逻辑）
