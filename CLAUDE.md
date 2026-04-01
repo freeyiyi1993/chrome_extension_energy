@@ -35,24 +35,32 @@ web/                           # Web 端
 
 shared/                        # 双端共享
 ├── types/index.ts             #   TypeScript 类型定义 (PomodoroTimer, AppState 等)
-├── firebase.ts                #   Firebase 初始化
+├── firebase.ts                #   Firebase 初始化 (懒初始化)
+├── cloudSync.ts               #   CloudSyncService 接口 + Firebase 实现 (动态 import)
 ├── storage.ts                 #   StorageInterface 抽象 + 双向同步 + 迁移
 ├── logic.ts                   #   核心纯函数 (衰减/恢复/番茄完成/完美一天/日切)
 ├── ticker.ts                  #   共享 init/日切/tick 逻辑 (平台无关)
 ├── constants/actionMapping.ts #   actionId 集中映射 (BUILTIN_ACTION_ID/INFO)
 ├── utils/time.ts              #   时间工具
 ├── utils/pomoSubmit.ts        #   番茄钟提交共享逻辑
-├── components/                #   MainDashboard, StatsPage, RulesPage, SettingsPage, MenuPanel, BaseAuthPanel
+├── components/                #   MainDashboard, EnergyBar, PomodoroRing, TaskGrid, ActivityLog,
+│                              #   StatsPage (lazy), LogBrowser, SettingsPage, TaskEditModal,
+│                              #   RulesPage, MenuPanel, BaseAuthPanel, ErrorBoundary
 └── public/                    #   共享静态资源
 
-tests/                         # 测试 (101 case)
+tests/                         # 测试 (124 case)
 ├── logic.test.ts              #   核心逻辑单测 (29 case)
 ├── ticker.test.ts             #   共享 ticker 单测 (17 case)
 ├── pomoSubmit.test.ts         #   番茄提交单测 (8 case)
 ├── storage.test.ts            #   同步合并/迁移/Firestore 转换 (16 case)
 ├── utils.test.ts              #   时间工具 (13 case)
 ├── types.test.ts              #   类型结构验证 (8 case)
-└── web_ui.test.ts             #   Puppeteer UI 自动化 (6 case)
+├── web_ui.test.ts             #   Puppeteer UI 自动化 (6 case)
+└── components/                #   UI 组件测试 (23 case)
+    ├── MainDashboard.test.tsx  #     打卡流程 (8 case)
+    ├── PomodoroRing.test.tsx   #     番茄钟状态机 (5 case)
+    ├── SettingsPage.test.tsx   #     设置页增删任务 (5 case)
+    └── BaseAuthPanel.test.tsx  #     登录态切换 (5 case)
 docs/                          # 项目文档
 dist/                          # Chrome 扩展构建产物
 dist-web/                      # Web 版构建产物
@@ -157,6 +165,12 @@ npm run lint              # ESLint
 - **迁移**: 各端 init 和 `syncFromCloud` 自动检测旧格式并转换
 - **状态**: 已实现
 
+### ADR-013: CloudSyncService 接口解耦 Firebase
+- **决策**: 提取 `CloudSyncService` 接口（upload/download），Firebase 实现移到 `shared/cloudSync.ts`。`sync()`/`resetAllData()` 签名从 `uid: string` 改为 `cloud: CloudSyncService`
+- **原因**: `shared/storage.ts` 直接 import Firebase 破坏共享层平台无关性，阻碍未来换后端（如 Supabase）或移动端扩展
+- **附带**: Firestore SDK 改为 dynamic `import()`，首屏不加载
+- **状态**: 已实现
+
 ## Current Status
 - [x] 插件基础功能 (MVP)
 - [x] 节假日模式 + 日志压缩优化
@@ -184,8 +198,14 @@ npm run lint              # ESLint
 - [x] 番茄钟原子实例同步 (PomodoroTimer + updatedAt 整体覆盖，count 拆到 AppState)
 - [x] 番茄钟重置按钮移除 (点击即 toggle 开始/停止)
 - [x] 核心逻辑提取 shared/logic.ts (5 个纯函数)
-- [x] 测试覆盖 23→101 case (逻辑/同步/时间/类型/ticker/pomoSubmit/Puppeteer UI)
+- [x] 测试覆盖 23→124 case (逻辑/同步/时间/类型/ticker/pomoSubmit/Puppeteer UI/组件)
 - [x] 代码优化: 提取共享 ticker/actionMapping/pomoSubmit/BaseAuthPanel，消除重复代码 ~500 行
+- [x] Firebase 解耦: CloudSyncService 接口 + Firestore 动态 import，shared 层不直接依赖 Firebase
+- [x] 大组件拆分: MainDashboard→4 子组件, SettingsPage→TaskEditModal, StatsPage→LogBrowser
+- [x] StatsPage + Chart.js 懒加载 (React.lazy, 独立 chunk ~170KB)
+- [x] ErrorBoundary 组件 + fetchData 错误处理
+- [x] StorageInterface 重载消除 15 处 as StorageData 强转
+- [x] UI 组件测试 23 case (MainDashboard/PomodoroRing/SettingsPage/BaseAuthPanel)
 
 ## 交付质量规范
 
