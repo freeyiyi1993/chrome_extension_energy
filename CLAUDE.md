@@ -45,8 +45,10 @@ shared/                        # 双端共享
 ├── components/                #   MainDashboard, StatsPage, RulesPage, SettingsPage, MenuPanel, BaseAuthPanel
 └── public/                    #   共享静态资源
 
-tests/                         # 测试 (76 case)
+tests/                         # 测试 (101 case)
 ├── logic.test.ts              #   核心逻辑单测 (29 case)
+├── ticker.test.ts             #   共享 ticker 单测 (17 case)
+├── pomoSubmit.test.ts         #   番茄提交单测 (8 case)
 ├── storage.test.ts            #   同步合并/迁移/Firestore 转换 (16 case)
 ├── utils.test.ts              #   时间工具 (13 case)
 ├── types.test.ts              #   类型结构验证 (8 case)
@@ -182,7 +184,7 @@ npm run lint              # ESLint
 - [x] 番茄钟原子实例同步 (PomodoroTimer + updatedAt 整体覆盖，count 拆到 AppState)
 - [x] 番茄钟重置按钮移除 (点击即 toggle 开始/停止)
 - [x] 核心逻辑提取 shared/logic.ts (5 个纯函数)
-- [x] 测试覆盖 23→76 case (逻辑/同步/时间/类型/Puppeteer UI)
+- [x] 测试覆盖 23→101 case (逻辑/同步/时间/类型/ticker/pomoSubmit/Puppeteer UI)
 - [x] 代码优化: 提取共享 ticker/actionMapping/pomoSubmit/BaseAuthPanel，消除重复代码 ~500 行
 
 ## 交付质量规范
