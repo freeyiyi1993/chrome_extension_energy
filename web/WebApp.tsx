@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { storage } from './storage';
 import { initWebData, startWebTicker, stopWebTicker, setLowEnergyCallback, setPomodoroCompleteCallback } from './web-ticker';
 import { type StorageData, type PageType } from '../shared/types';
 import { checkPomodoroExpired } from '../shared/logic';
 import MainDashboard from '../shared/components/MainDashboard';
 import RulesPage from '../shared/components/RulesPage';
-import StatsPage from '../shared/components/StatsPage';
 import SettingsPage from '../shared/components/SettingsPage';
+
+const StatsPage = lazy(() => import('../shared/components/StatsPage'));
 import MenuPanel from '../shared/components/MenuPanel';
 import AuthPanel from './components/AuthPanel';
 import FinishOverlay from './components/FinishOverlay';
@@ -133,7 +134,9 @@ export default function WebApp() {
             {currentPage === 'rules' && <RulesPage data={data} onBack={() => navigateTo('main')} />}
 
             {currentPage === 'stats' && (
-              <StatsPage data={data} onBack={() => navigateTo('main')} />
+              <Suspense fallback={<div className="p-4 text-center text-gray-500">加载中...</div>}>
+                <StatsPage data={data} onBack={() => navigateTo('main')} />
+              </Suspense>
             )}
 
             {currentPage === 'settings' && (

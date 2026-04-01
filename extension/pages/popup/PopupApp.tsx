@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import MainDashboard from '../../../shared/components/MainDashboard';
 import RulesPage from '../../../shared/components/RulesPage';
-import StatsPage from '../../../shared/components/StatsPage';
 import SettingsPage from '../../../shared/components/SettingsPage';
 import MenuPanel from '../../../shared/components/MenuPanel';
 import SyncPanel from '../../components/SyncPanel';
 import { type StorageData, type PageType } from '../../../shared/types';
 import { storage } from '../../storage';
+
+const StatsPage = lazy(() => import('../../../shared/components/StatsPage'));
 
 export default function PopupApp() {
   const [currentPage, setCurrentPage] = useState<PageType>('main');
@@ -59,7 +60,9 @@ export default function PopupApp() {
       {currentPage === 'rules' && <RulesPage data={data} onBack={() => navigateTo('main')} />}
 
       {currentPage === 'stats' && (
-        <StatsPage data={data} onBack={() => navigateTo('main')} />
+        <Suspense fallback={<div className="p-4 text-center text-gray-500">加载中...</div>}>
+          <StatsPage data={data} onBack={() => navigateTo('main')} />
+        </Suspense>
       )}
 
       {currentPage === 'settings' && (
