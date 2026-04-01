@@ -1,7 +1,6 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from './firebase';
 import { type StorageData, type StatEntry, type AppLogEntry, type Tasks, type AppState, type PomodoroTimer, DEFAULT_CONFIG, DEFAULT_TASK_DEFS } from './types';
 import { getLogicalDate, getLogical8AM, buildEmptyTasks } from './utils/time';
+import { type CloudSyncService, syncToCloud, syncFromCloud } from './cloudSync';
 
 // 统一存储接口：各平台（Chrome 扩展 / Web）各自实现
 export interface StorageInterface {
@@ -52,41 +51,8 @@ export function logsFromFirestore(logs: (AppLogEntry | { _t: number; _a: number;
   );
 }
 
-// --- Firebase 云同步 ---
-
-export async function syncToCloud(storage: StorageInterface, uid: string): Promise<void> {
-  const data = await storage.get(null) as StorageData;
-  const ref = doc(db, 'users', uid);
-  // merge:true 下 undefined 字段不会被删除，需显式转 null
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Firestore 需要 null 而非 undefined 来删除字段
-  if (data.state?.pomodoro && data.state.pomodoro.startedAt === undefined) {
-    (data.state.pomodoro as unknown as Record<string, unknown>).startedAt = null;
-  }
-  const payload = {
-    ...data,
-    logs: data.logs ? logsToFirestore(data.logs) : [],
-    lastSyncAt: Date.now(),
-  };
-  await setDoc(ref, payload, { merge: true });
-}
-
-export async function syncFromCloud(uid: string): Promise<StorageData | null> {
-  const ref = doc(db, 'users', uid);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return null;
-  const rawData = snap.data() as StorageData & { lastSyncAt?: number };
-  const { lastSyncAt: _, ...cloudData } = rawData;
-  if (cloudData.logs) {
-    cloudData.logs = logsFromFirestore(cloudData.logs);
-  }
-  // Firestore 的 null 还原为 undefined
-  if (cloudData.state?.pomodoro && (cloudData.state.pomodoro as unknown as Record<string, unknown>).startedAt === null) {
-    cloudData.state.pomodoro.startedAt = undefined;
-  }
-  // 旧格式迁移
-  migratePomodoro(cloudData.state);
-  return cloudData;
-}
+// syncToCloud / syncFromCloud 已迁移到 cloudSync.ts
+export { syncToCloud, syncFromCloud, type CloudSyncService } from './cloudSync';
 
 // --- 日志合并工具 ---
 
@@ -177,7 +143,7 @@ function mergeState(local: AppState | undefined, cloud: AppState | undefined): A
 }
 
 /** 重置所有数据：写入 dataResetAt 时间戳，各端忽略此前数据 */
-export async function resetAllData(storage: StorageInterface, uid?: string): Promise<void> {
+export async function resetAllData(storage: StorageInterface, cloud?: CloudSyncService): Promise<void> {
   const dataResetAt = Date.now();
   const existing = await storage.get(['config', 'taskDefs']) as StorageData;
   const config = existing.config || DEFAULT_CONFIG;
@@ -208,18 +174,18 @@ export async function resetAllData(storage: StorageInterface, uid?: string): Pro
     stats: [],
   });
 
-  if (uid) {
-    await syncToCloud(storage, uid);
+  if (cloud) {
+    await syncToCloud(storage, cloud);
   }
 }
 
 /** 双向同步：合并本地与云端数据，写回双端 */
-export async function sync(storage: StorageInterface, uid: string): Promise<'synced' | 'no_change' | 'empty'> {
-  const cloudData = await syncFromCloud(uid);
+export async function sync(storage: StorageInterface, cloud: CloudSyncService): Promise<'synced' | 'no_change' | 'empty'> {
+  const cloudData = await syncFromCloud(cloud);
 
   // 云端无数据：推送本地到云端
   if (!cloudData) {
-    await syncToCloud(storage, uid);
+    await syncToCloud(storage, cloud);
     return 'empty';
   }
 
@@ -307,7 +273,7 @@ export async function sync(storage: StorageInterface, uid: string): Promise<'syn
   await storage.set(mergedData);
 
   // 推送合并结果到云端
-  await syncToCloud(storage, uid);
+  await syncToCloud(storage, cloud);
 
   return 'synced';
 }

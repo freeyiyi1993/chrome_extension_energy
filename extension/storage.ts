@@ -5,6 +5,7 @@ import {
   sync as sharedSync,
   resetAllData as sharedResetAllData,
 } from '../shared/storage';
+import { createFirebaseSync } from '../shared/cloudSync';
 
 // --- Chrome 扩展存储实现 ---
 const chromeGet = async (keys: string[] | null): Promise<Partial<StorageData>> => {
@@ -21,15 +22,15 @@ export const storage: StorageInterface = {
   set: chromeSet,
 };
 
-// --- Firebase 云同步（委托给 shared/storage） ---
+// --- Firebase 云同步（委托给 shared/storage + cloudSync） ---
 export async function syncToCloud(uid: string): Promise<void> {
-  await sharedSyncToCloud(storage, uid);
+  await sharedSyncToCloud(storage, createFirebaseSync(uid));
 }
 
 export async function sync(uid: string): Promise<'synced' | 'no_change' | 'empty'> {
-  return sharedSync(storage, uid);
+  return sharedSync(storage, createFirebaseSync(uid));
 }
 
 export async function resetAllData(uid?: string): Promise<void> {
-  return sharedResetAllData(storage, uid);
+  return sharedResetAllData(storage, uid ? createFirebaseSync(uid) : undefined);
 }

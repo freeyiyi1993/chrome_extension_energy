@@ -5,6 +5,7 @@ import {
   sync as sharedSync,
   resetAllData as sharedResetAllData,
 } from '../shared/storage';
+import { createFirebaseSync } from '../shared/cloudSync';
 
 // Web 版使用 localStorage
 const LOCAL_KEY = 'energy_app_data';
@@ -27,7 +28,11 @@ const webGet = async (keys: string[] | null): Promise<Partial<StorageData>> => {
   if (keys === null) return all;
   const result: Partial<StorageData> = {};
   for (const k of keys) {
-    if (k in all) (result as any)[k] = (all as any)[k];
+    const key = k as keyof StorageData;
+    if (key in all) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic key access on StorageData
+      (result as any)[key] = all[key];
+    }
   }
   return result;
 };
@@ -43,15 +48,15 @@ export const storage: StorageInterface = {
   set: webSet,
 };
 
-// --- Firebase 云同步（委托给 shared/storage） ---
+// --- Firebase 云同步（委托给 shared/storage + cloudSync） ---
 export async function syncToCloud(uid: string): Promise<void> {
-  await sharedSyncToCloud(storage, uid);
+  await sharedSyncToCloud(storage, createFirebaseSync(uid));
 }
 
 export async function sync(uid: string): Promise<'synced' | 'no_change' | 'empty'> {
-  return sharedSync(storage, uid);
+  return sharedSync(storage, createFirebaseSync(uid));
 }
 
 export async function resetAllData(uid?: string): Promise<void> {
-  return sharedResetAllData(storage, uid);
+  return sharedResetAllData(storage, uid ? createFirebaseSync(uid) : undefined);
 }
