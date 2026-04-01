@@ -1,7 +1,6 @@
 import { type StorageData } from '../../shared/types';
-import { getLogicalDate } from '../../shared/utils/time';
-import { migratePomodoro } from '../../shared/storage';
-import { initAppData, handleDayRollover, processTick } from '../../shared/ticker';
+import { initAppData } from '../../shared/ticker';
+import { handleTick } from './tickHandler';
 
 const storageSet = (data: Partial<StorageData>) =>
   chrome.storage.local.set(data);
@@ -45,31 +44,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === "tick") {
     const data = (await chrome.storage.local.get(null)) as StorageData;
-    if (!data.state) return;
+    const finishUrl = chrome.runtime.getURL("extension/pages/finish/finish.html");
+    const action = handleTick(data, Date.now(), finishUrl);
 
-    // 旧格式迁移
-    migratePomodoro(data.state);
-
-    const todayStr = getLogicalDate();
-    if (data.state.logicalDate !== todayStr) {
-      const { toWrite } = handleDayRollover(data, todayStr);
-      await storageSet(toWrite);
-      return;
+    if (Object.keys(action.toWrite).length > 0) {
+      await storageSet(action.toWrite);
     }
 
-    const now = Date.now();
-    const result = processTick(data, now);
-
-    // 先写入 state（番茄钟已标为 idle），再打开确认页
     // 必须 await tabs.create，否则 MV3 Service Worker 可能在 tab 创建前终止
-    await storageSet({ state: result.state });
-
-    if (result.lowEnergyTriggered) {
-      await chrome.tabs.create({ url: chrome.runtime.getURL("extension/pages/finish/finish.html?type=energy") });
-    }
-
-    if (result.pomoExpired) {
-      await chrome.tabs.create({ url: chrome.runtime.getURL(`extension/pages/finish/finish.html?type=pomodoro&forcedBreak=${result.isForcedBreak}`) });
+    for (const url of action.openTabs) {
+      await chrome.tabs.create({ url });
     }
   }
 });
