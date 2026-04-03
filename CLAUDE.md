@@ -46,11 +46,11 @@ shared/                        # 双端共享
 ├── components/                #   MainDashboard, EnergyBar, PomodoroRing, TaskGrid, ActivityLog,
 │                              #   StatsPage (lazy), LogBrowser, SettingsPage, TaskEditModal,
 │                              #   RulesPage, MenuPanel, BaseAuthPanel, ErrorBoundary,
-│                              #   PerfectDayCelebration, BadDayWarning
+│                              #   DayResultModal
 └── public/                    #   共享静态资源
 
-tests/                         # 测试 (154 case)
-├── logic.test.ts              #   核心逻辑单测 (35 case)
+tests/                         # 测试 (156 case)
+├── logic.test.ts              #   核心逻辑单测 (37 case)
 ├── ticker.test.ts             #   共享 ticker 单测 (20 case)
 ├── pomoSubmit.test.ts         #   番茄提交单测 (8 case)
 ├── storage.test.ts            #   同步合并/迁移/Firestore 转换 (16 case)
@@ -200,7 +200,7 @@ npm run lint              # ESLint
 - [x] 番茄钟原子实例同步 (PomodoroTimer + updatedAt 整体覆盖，count 拆到 AppState)
 - [x] 番茄钟重置按钮移除 (点击即 toggle 开始/停止)
 - [x] 核心逻辑提取 shared/logic.ts (5 个纯函数)
-- [x] 测试覆盖 23→154 case (逻辑/同步/时间/类型/ticker/pomoSubmit/Puppeteer UI/组件)
+- [x] 测试覆盖 23→156 case (逻辑/同步/时间/类型/ticker/pomoSubmit/Puppeteer UI/组件)
 - [x] 代码优化: 提取共享 ticker/actionMapping/pomoSubmit/BaseAuthPanel，消除重复代码 ~500 行
 - [x] Firebase 解耦: CloudSyncService 接口 + Firestore 动态 import，shared 层不直接依赖 Firebase
 - [x] 大组件拆分: MainDashboard→4 子组件, SettingsPage→TaskEditModal, StatsPage→LogBrowser
