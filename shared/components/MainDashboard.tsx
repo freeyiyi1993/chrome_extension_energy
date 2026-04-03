@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Menu, BarChart2 } from 'lucide-react';
 import { type StorageData, type PageType, DEFAULT_TASK_DEFS } from '../types';
 import { type StorageInterface } from '../storage';
-import { isFullPerfectDay, isBadDay } from '../logic';
+import { isPerfectDay, isBadDay } from '../logic';
 import EnergyBar from './EnergyBar';
 import PomodoroRing from './PomodoroRing';
 import TaskGrid from './TaskGrid';
@@ -43,7 +43,8 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
   const allTaskDefs = data.taskDefs || DEFAULT_TASK_DEFS;
   const taskDefs = allTaskDefs.filter(d => d.enabled);
 
-  const nowPerfect = !!(state && tasks && isFullPerfectDay(tasks, allTaskDefs, state.pomoPerfectCount || 0));
+  // 弹窗只看任务完成（isPerfectDay），番茄要求只用于日切 maxEnergy 奖励
+  const nowPerfect = !!(state && tasks && isPerfectDay(tasks, allTaskDefs));
   const nowBad = !!(state && tasks && isBadDay(tasks, state.pomoPerfectCount || 0));
   const logicalDate = state?.logicalDate || '';
   const perfectFired = useTransition(nowPerfect, `perfect-${logicalDate}`);
