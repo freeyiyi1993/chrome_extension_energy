@@ -247,7 +247,8 @@ describe('MainDashboard', () => {
   });
 
   it('shows bad day warning when sleep < 6 and exercise < 30', () => {
-    const before = makeData({ tasks: { sleep: null, exercise: 20, meals: null, water: null, stretch: null, nap: null, meditate: null, poop: null }, state: makeState({ pomoPerfectCount: 0 }) });
+    // before: exercise=30 → not bad; after: exercise changed to 20 + sleep=5 → bad
+    const before = makeData({ tasks: { sleep: null, exercise: 30, meals: null, water: null, stretch: null, nap: null, meditate: null, poop: null }, state: makeState({ pomoPerfectCount: 0 }) });
     const after = makeData({ tasks: { sleep: 5, exercise: 20, meals: null, water: null, stretch: null, nap: null, meditate: null, poop: null }, state: makeState({ pomoPerfectCount: 0 }) });
     const storage = mockStorage(before);
 
@@ -256,7 +257,7 @@ describe('MainDashboard', () => {
     expect(screen.getByText('糟糕一天')).toBeTruthy();
   });
 
-  it('does not show bad day if sleep not entered yet', () => {
+  it('does not show bad day on holiday (sleep+exercise both null)', () => {
     const before = makeData({ tasks: { sleep: null, exercise: null, meals: null, water: null, stretch: null, nap: null, meditate: null, poop: null }, state: makeState({ pomoPerfectCount: 0 }) });
     const after = makeData({ tasks: { sleep: null, exercise: null, meals: 1, water: null, stretch: null, nap: null, meditate: null, poop: null }, state: makeState({ pomoPerfectCount: 0 }) });
     const storage = mockStorage(before);

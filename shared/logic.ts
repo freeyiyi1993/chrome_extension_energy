@@ -53,10 +53,12 @@ export function isFullPerfectDay(tasks: Tasks, taskDefs: CustomTaskDef[], pomoPe
   return isPerfectDay(tasks, taskDefs) && pomoPerfectCount >= PERFECT_POMODOROS_REQUIRED;
 }
 
-/** 糟糕一天判定：无完美番茄 + 运动未达标 + 睡眠不足 (null 视为不足) */
+/** 糟糕一天判定：至少录入了 sleep 或 exercise + 无完美番茄 + 运动未达标 + 睡眠不足 */
 export function isBadDay(tasks: Tasks, pomoPerfectCount: number): boolean {
   const sleepVal = tasks['sleep'] as number | null;
   const exerciseVal = tasks['exercise'] as number | null;
+  // sleep/exercise 都未录入视为假期，不扣罚
+  if ((sleepVal == null) && (exerciseVal == null)) return false;
   return pomoPerfectCount === 0 && (!exerciseVal || exerciseVal < 30) && (!sleepVal || sleepVal < 6);
 }
 

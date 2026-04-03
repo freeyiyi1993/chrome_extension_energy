@@ -122,28 +122,46 @@ describe('handleDayRollover', () => {
     expect(toWrite.tasks!['sleep']).toBeNull();
   });
 
-  it('perfect day: maxEnergy increases', () => {
+  it('perfect day: maxEnergy increases + stats records new value + config synced', () => {
     const data: StorageData = {
-      config: DEFAULT_CONFIG,
+      config: { ...DEFAULT_CONFIG },
       taskDefs: DEFAULT_TASK_DEFS,
       state: baseState({ logicalDate: '2026-03-30', maxEnergy: 65, pomoCount: 5, pomoPerfectCount: 4 }),
       tasks: { sleep: 8, exercise: 30, meals: 3, water: 5, stretch: 3, nap: true, meditate: 3, poop: true },
       stats: [],
     };
     const { toWrite } = handleDayRollover(data, '2026-03-31');
-    expect(toWrite.state!.maxEnergy).toBe(65 + DEFAULT_CONFIG.perfectDayBonus);
+    expect(toWrite.state!.maxEnergy).toBe(66);
+    expect(toWrite.stats![0].maxEnergy).toBe(66); // stats 记录 delta 后的值
+    expect(toWrite.config!.maxEnergy).toBe(66);   // config 同步
   });
 
-  it('bad day: maxEnergy decreases', () => {
+  it('bad day: maxEnergy decreases + stats records new value + config synced', () => {
     const data: StorageData = {
-      config: DEFAULT_CONFIG,
+      config: { ...DEFAULT_CONFIG },
       taskDefs: DEFAULT_TASK_DEFS,
       state: baseState({ logicalDate: '2026-03-30', maxEnergy: 65, pomoCount: 0, pomoPerfectCount: 0 }),
       tasks: { sleep: 4, exercise: 0, meals: 1, water: 1, stretch: 0, nap: false, meditate: 0, poop: false },
       stats: [],
     };
     const { toWrite } = handleDayRollover(data, '2026-03-31');
-    expect(toWrite.state!.maxEnergy).toBe(65 - DEFAULT_CONFIG.badDayPenalty);
+    expect(toWrite.state!.maxEnergy).toBe(64);
+    expect(toWrite.stats![0].maxEnergy).toBe(64);
+    expect(toWrite.config!.maxEnergy).toBe(64);
+  });
+
+  it('holiday (only water): no penalty, no stats', () => {
+    const data: StorageData = {
+      config: { ...DEFAULT_CONFIG },
+      taskDefs: DEFAULT_TASK_DEFS,
+      state: baseState({ logicalDate: '2026-03-30', maxEnergy: 65, pomoCount: 0, pomoPerfectCount: 0 }),
+      tasks: { sleep: null, exercise: null, meals: 0, water: 3, stretch: 0, nap: false, meditate: 0, poop: false },
+      stats: [],
+    };
+    const { toWrite } = handleDayRollover(data, '2026-03-31');
+    expect(toWrite.state!.maxEnergy).toBe(65);
+    // water > 0 so isNoInput=false, but isBadDay=false (holiday protection)
+    expect(toWrite.stats![0].maxEnergy).toBe(65);
   });
 
   it('perfect day: writes log entry with maxEnergy change', () => {

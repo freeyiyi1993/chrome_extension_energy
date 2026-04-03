@@ -40,8 +40,7 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
   const taskDefs = allTaskDefs.filter(d => d.enabled);
 
   const nowPerfect = !!(state && tasks && isFullPerfectDay(tasks, allTaskDefs, state.pomoPerfectCount || 0));
-  // 弹窗需 sleep 已录入才触发（避免开局全 null 就弹），日切惩罚用 isBadDay 不需此限制
-  const nowBad = !!(state && tasks && tasks['sleep'] != null && isBadDay(tasks, state.pomoPerfectCount || 0));
+  const nowBad = !!(state && tasks && isBadDay(tasks, state.pomoPerfectCount || 0));
   const perfectFired = useTransition(nowPerfect);
   const badFired = useTransition(nowBad);
 

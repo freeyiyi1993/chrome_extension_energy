@@ -170,9 +170,17 @@ describe('isBadDay', () => {
     expect(isBadDay({ sleep: 5, exercise: 20 }, 0)).toBe(true);
   });
 
-  it('sleep not entered: still bad day (null = insufficient)', () => {
-    expect(isBadDay({ sleep: null }, 0)).toBe(true);
-    expect(isBadDay({}, 0)).toBe(true);
+  it('both null: holiday, not bad day', () => {
+    expect(isBadDay({ sleep: null }, 0)).toBe(false);
+    expect(isBadDay({}, 0)).toBe(false);
+  });
+
+  it('sleep null but exercise entered < 30: bad day', () => {
+    expect(isBadDay({ sleep: null, exercise: 20 }, 0)).toBe(true);
+  });
+
+  it('exercise null but sleep entered < 6: bad day', () => {
+    expect(isBadDay({ exercise: null, sleep: 4 }, 0)).toBe(true);
   });
 
   it('sleep >= 6: not bad day', () => {

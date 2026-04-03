@@ -119,7 +119,9 @@ export function handleDayRollover(data: StorageData, todayStr: string): DayRollo
 
   if (!isNoInput) {
     const maxEnergyDelta = calculateMaxEnergyDelta(tasks, taskDefs, pomoCount, perfectCount, config);
+    state.maxEnergy += maxEnergyDelta;
 
+    // stats 记录 delta 后的 maxEnergy，让统计页体现完美/糟糕一天的效果
     stats.push({
       date: state.logicalDate,
       maxEnergy: state.maxEnergy,
@@ -128,7 +130,10 @@ export function handleDayRollover(data: StorageData, todayStr: string): DayRollo
       perfectCount,
     });
 
-    state.maxEnergy += maxEnergyDelta;
+    // 同步 config.maxEnergy，使设置页显示当前实际值
+    if (maxEnergyDelta !== 0) {
+      config.maxEnergy = state.maxEnergy;
+    }
 
     // 日志记录精力上限变动
     const now = Date.now();
@@ -149,7 +154,7 @@ export function handleDayRollover(data: StorageData, todayStr: string): DayRollo
   state.pomodoro.consecutiveCount = 0;
 
   return {
-    toWrite: { state, tasks: buildEmptyTasks(taskDefs), stats, logs },
+    toWrite: { state, config, tasks: buildEmptyTasks(taskDefs), stats, logs },
   };
 }
 
