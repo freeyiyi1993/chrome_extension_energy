@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Menu, BarChart2 } from 'lucide-react';
 import { type StorageData, type PageType, DEFAULT_TASK_DEFS } from '../types';
 import { type StorageInterface } from '../storage';
@@ -5,6 +6,7 @@ import EnergyBar from './EnergyBar';
 import PomodoroRing from './PomodoroRing';
 import TaskGrid from './TaskGrid';
 import ActivityLog from './ActivityLog';
+import PerfectDayCelebration from './PerfectDayCelebration';
 
 interface Props {
   data: StorageData;
@@ -17,6 +19,7 @@ interface Props {
 }
 
 export default function MainDashboard({ data, storage, onOpenMenu, onDataChange, onNavigate, flat, compact }: Props) {
+  const [showCelebration, setShowCelebration] = useState(false);
   const { state, tasks, config } = data;
   const taskDefs = (data.taskDefs || DEFAULT_TASK_DEFS).filter(d => d.enabled);
 
@@ -40,7 +43,7 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
 
       <PomodoroRing state={state} storage={storage} onDataChange={onDataChange} compact={compact} className={card} />
 
-      <TaskGrid tasks={tasks} config={config} taskDefs={taskDefs} storage={storage} onDataChange={onDataChange} className={card} />
+      <TaskGrid tasks={tasks} config={config} taskDefs={taskDefs} storage={storage} onDataChange={onDataChange} onPerfectDay={() => setShowCelebration(true)} className={card} />
 
       {/* 数据统计入口 */}
       {onNavigate && (
@@ -56,6 +59,8 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
       )}
 
       <ActivityLog data={data} className={cardLast} />
+
+      {showCelebration && <PerfectDayCelebration onClose={() => setShowCelebration(false)} />}
     </div>
   );
 }
