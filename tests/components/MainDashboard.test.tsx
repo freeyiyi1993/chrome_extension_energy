@@ -164,14 +164,15 @@ describe('MainDashboard', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  // --- 完美一天庆祝弹窗 (弹窗只看任务完成，不要求完美番茄) ---
+  // --- 完美一天庆祝弹窗 (要求任务完成 + 4个完美番茄) ---
 
+  const perfectState = makeState({ pomoPerfectCount: 4 });
   const perfectTasks: Tasks = { sleep: 8, exercise: 30, meals: 3, water: 5, stretch: null, nap: null, meditate: null, poop: null };
   const almostPerfectTasks: Tasks = { sleep: 8, exercise: 30, meals: 3, water: 4, stretch: null, nap: null, meditate: null, poop: null };
 
-  it('shows celebration when last counter task completes all tasks', () => {
-    const before = makeData({ tasks: almostPerfectTasks });
-    const after = makeData({ tasks: perfectTasks });
+  it('shows celebration when last counter task completes all tasks (with enough pomodoros)', () => {
+    const before = makeData({ tasks: almostPerfectTasks, state: perfectState });
+    const after = makeData({ tasks: perfectTasks, state: perfectState });
     const storage = mockStorage(before);
 
     const { rerender } = render(<MainDashboard data={before} storage={storage} onOpenMenu={noop} onDataChange={noop} />);
@@ -182,8 +183,8 @@ describe('MainDashboard', () => {
   });
 
   it('shows celebration when exercise (number type) completes all tasks', () => {
-    const noExercise = makeData({ tasks: { ...perfectTasks, exercise: null } });
-    const withExercise = makeData({ tasks: perfectTasks });
+    const noExercise = makeData({ tasks: { ...perfectTasks, exercise: null }, state: perfectState });
+    const withExercise = makeData({ tasks: perfectTasks, state: perfectState });
     const storage = mockStorage(noExercise);
 
     const { rerender } = render(<MainDashboard data={noExercise} storage={storage} onOpenMenu={noop} onDataChange={noop} />);
@@ -191,24 +192,36 @@ describe('MainDashboard', () => {
     expect(screen.getByText('完美一天!')).toBeTruthy();
   });
 
-  it('shows celebration without any perfect pomodoros (tasks only)', () => {
+  it('does NOT show celebration without enough perfect pomodoros', () => {
     const before = makeData({ tasks: almostPerfectTasks, state: makeState({ pomoPerfectCount: 0 }) });
     const after = makeData({ tasks: perfectTasks, state: makeState({ pomoPerfectCount: 0 }) });
     const storage = mockStorage(before);
 
     const { rerender } = render(<MainDashboard data={before} storage={storage} onOpenMenu={noop} onDataChange={noop} />);
     rerender(<MainDashboard data={after} storage={storage} onOpenMenu={noop} onDataChange={noop} />);
+    expect(screen.queryByText('完美一天!')).toBeNull();
+  });
+
+  it('shows celebration when 4th perfect pomodoro completes (tasks already done)', () => {
+    const before = makeData({ tasks: perfectTasks, state: makeState({ pomoPerfectCount: 3 }) });
+    const after = makeData({ tasks: perfectTasks, state: makeState({ pomoPerfectCount: 4 }) });
+    const storage = mockStorage(before);
+
+    const { rerender } = render(<MainDashboard data={before} storage={storage} onOpenMenu={noop} onDataChange={noop} />);
+    expect(screen.queryByText('完美一天!')).toBeNull();
+
+    rerender(<MainDashboard data={after} storage={storage} onOpenMenu={noop} onDataChange={noop} />);
     expect(screen.getByText('完美一天!')).toBeTruthy();
   });
 
   it('shows celebration on first render if already perfect (e.g. page refresh)', () => {
-    const data = makeData({ tasks: perfectTasks });
+    const data = makeData({ tasks: perfectTasks, state: perfectState });
     render(<MainDashboard data={data} storage={mockStorage(data)} onOpenMenu={noop} onDataChange={noop} />);
     expect(screen.getByText('完美一天!')).toBeTruthy();
   });
 
   it('does not re-show celebration after navigation (same session)', () => {
-    const data = makeData({ tasks: perfectTasks });
+    const data = makeData({ tasks: perfectTasks, state: perfectState });
     const { unmount } = render(<MainDashboard data={data} storage={mockStorage(data)} onOpenMenu={noop} onDataChange={noop} />);
     expect(screen.getByText('完美一天!')).toBeTruthy();
     unmount();
@@ -218,8 +231,8 @@ describe('MainDashboard', () => {
   });
 
   it('closes celebration on button click', () => {
-    const before = makeData({ tasks: almostPerfectTasks });
-    const after = makeData({ tasks: perfectTasks });
+    const before = makeData({ tasks: almostPerfectTasks, state: perfectState });
+    const after = makeData({ tasks: perfectTasks, state: perfectState });
     const storage = mockStorage(before);
 
     const { rerender } = render(<MainDashboard data={before} storage={storage} onOpenMenu={noop} onDataChange={noop} />);

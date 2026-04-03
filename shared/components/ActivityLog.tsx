@@ -48,7 +48,10 @@ export default function ActivityLog({ data, className }: Props) {
     if (actionId === BUILTIN_ACTION_ID.sleep) return `${val}h`;
     if (actionId === BUILTIN_ACTION_ID.exercise) return `${val}min`;
     if (actionId === POMO_ACTION_ID) return `${val}%`;
-    if (actionId === PERFECT_DAY_ACTION_ID || actionId === BAD_DAY_ACTION_ID) {
+    if (actionId === PERFECT_DAY_ACTION_ID) {
+      return diff === 0 ? '达成!' : `上限 ${val - diff}→${val}`;
+    }
+    if (actionId === BAD_DAY_ACTION_ID) {
       return `上限 ${val - diff}→${val}`;
     }
     return String(val);

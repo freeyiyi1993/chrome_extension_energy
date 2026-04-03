@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Menu, BarChart2 } from 'lucide-react';
 import { type StorageData, type PageType, DEFAULT_TASK_DEFS } from '../types';
 import { type StorageInterface } from '../storage';
-import { isPerfectDay, isBadDay } from '../logic';
+import { isFullPerfectDay, isBadDay } from '../logic';
+import { PERFECT_DAY_ACTION_ID } from '../constants/actionMapping';
 import EnergyBar from './EnergyBar';
 import PomodoroRing from './PomodoroRing';
 import TaskGrid from './TaskGrid';
@@ -43,8 +44,8 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
   const allTaskDefs = data.taskDefs || DEFAULT_TASK_DEFS;
   const taskDefs = allTaskDefs.filter(d => d.enabled);
 
-  // 弹窗只看任务完成（isPerfectDay），番茄要求只用于日切 maxEnergy 奖励
-  const nowPerfect = !!(state && tasks && isPerfectDay(tasks, allTaskDefs));
+  // 弹窗要求任务 + 完美番茄（isFullPerfectDay），和日切 maxEnergy 奖励一致
+  const nowPerfect = !!(state && tasks && isFullPerfectDay(tasks, allTaskDefs, state.pomoPerfectCount || 0));
   const nowBad = !!(state && tasks && isBadDay(tasks, state.pomoPerfectCount || 0));
   const logicalDate = state?.logicalDate || '';
   const perfectFired = useTransition(nowPerfect, `perfect-${logicalDate}`);
@@ -52,10 +53,17 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
 
   const [dayResult, setDayResult] = useState<DayResultType | null>(null);
 
-  const handlePerfectDay = () => {
+  const handlePerfectDay = async () => {
     if (!shownThisSession.has(`perfect-${logicalDate}`)) {
       shownThisSession.add(`perfect-${logicalDate}`);
       setDayResult('perfect');
+      // 写入日志流
+      const d = await storage.get(['state', 'logs']);
+      if (d.state) {
+        const logs = d.logs || [];
+        logs.unshift([Date.now(), PERFECT_DAY_ACTION_ID, d.state.maxEnergy, 0]);
+        await storage.set({ logs });
+      }
     }
   };
 

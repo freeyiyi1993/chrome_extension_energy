@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { type CustomTaskDef, type Tasks, type Config, DEFAULT_TASK_DEFS } from '../types';
 import { type StorageInterface } from '../storage';
-import { calculateRecovery, isPerfectDay } from '../logic';
+import { calculateRecovery, isFullPerfectDay } from '../logic';
 import { BUILTIN_ACTION_ID, CUSTOM_ACTION_ID_OFFSET } from '../constants/actionMapping';
 
 interface Props {
@@ -72,7 +72,7 @@ export default function TaskGrid({ tasks, config, taskDefs, storage, onDataChang
     await storage.set({ tasks: d.tasks, state: d.state, logs });
 
     // 打卡后立即检测完美一天（不等 polling）
-    if (onPerfectDay && isPerfectDay(d.tasks, allDefs)) {
+    if (onPerfectDay && isFullPerfectDay(d.tasks, allDefs, d.state.pomoPerfectCount || 0)) {
       onPerfectDay();
     }
 
