@@ -9,7 +9,7 @@ vi.mock('../../shared/firebase', () => ({
   db: {},
 }));
 
-import MainDashboard from '../../shared/components/MainDashboard';
+import MainDashboard, { shownThisSession } from '../../shared/components/MainDashboard';
 import { type StorageInterface } from '../../shared/storage';
 
 const basePomo: PomodoroTimer = { status: 'idle', updatedAt: 0, consecutiveCount: 0 };
@@ -52,6 +52,10 @@ function mockStorage(getData: Partial<StorageData>): StorageInterface {
 const noop = () => {};
 
 describe('MainDashboard', () => {
+  beforeEach(() => {
+    shownThisSession.clear();
+  });
+
   it('renders energy bar with current values', () => {
     const data = makeData();
     render(<MainDashboard data={data} storage={mockStorage(data)} onOpenMenu={noop} onDataChange={noop} />);
@@ -233,8 +237,19 @@ describe('MainDashboard', () => {
     expect(screen.queryByText('完美一天!')).toBeNull();
   });
 
-  it('does not show celebration on first render even if already perfect', () => {
+  it('shows celebration on first render if already perfect (e.g. page refresh)', () => {
     const data = makeData({ tasks: perfectTasks, state: makeState({ pomoPerfectCount: 4 }) });
+    render(<MainDashboard data={data} storage={mockStorage(data)} onOpenMenu={noop} onDataChange={noop} />);
+    expect(screen.getByText('完美一天!')).toBeTruthy();
+  });
+
+  it('does not re-show celebration after navigation (same session)', () => {
+    const data = makeData({ tasks: perfectTasks, state: makeState({ pomoPerfectCount: 4 }) });
+    const { unmount } = render(<MainDashboard data={data} storage={mockStorage(data)} onOpenMenu={noop} onDataChange={noop} />);
+    expect(screen.getByText('完美一天!')).toBeTruthy();
+    unmount();
+
+    // Re-mount simulating navigation back
     render(<MainDashboard data={data} storage={mockStorage(data)} onOpenMenu={noop} onDataChange={noop} />);
     expect(screen.queryByText('完美一天!')).toBeNull();
   });

@@ -9,17 +9,21 @@ import TaskGrid from './TaskGrid';
 import ActivityLog from './ActivityLog';
 import DayResultModal, { type DayResultType } from './DayResultModal';
 
-/** 检测布尔值从 false 变为 true，首次渲染不触发 */
-function useTransition(value: boolean): boolean {
-  const prevRef = useRef<boolean | null>(null);
+// 防止 main→settings→main 来回导航重复弹窗
+export const shownThisSession = new Set<string>();
+
+/** 检测布尔值变为 true（含首次加载已为 true），同一会话内只触发一次 */
+function useTransition(value: boolean, key: string): boolean {
+  const prevRef = useRef(false);
   const [fired, setFired] = useState(false);
 
   useEffect(() => {
-    if (prevRef.current === false && value) {
+    if (!prevRef.current && value && !shownThisSession.has(key)) {
+      shownThisSession.add(key);
       setFired(true);
     }
     prevRef.current = value;
-  }, [value]);
+  }, [value, key]);
 
   return fired;
 }
@@ -41,8 +45,9 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
 
   const nowPerfect = !!(state && tasks && isFullPerfectDay(tasks, allTaskDefs, state.pomoPerfectCount || 0));
   const nowBad = !!(state && tasks && isBadDay(tasks, state.pomoPerfectCount || 0));
-  const perfectFired = useTransition(nowPerfect);
-  const badFired = useTransition(nowBad);
+  const logicalDate = state?.logicalDate || '';
+  const perfectFired = useTransition(nowPerfect, `perfect-${logicalDate}`);
+  const badFired = useTransition(nowBad, `bad-${logicalDate}`);
 
   const [dayResult, setDayResult] = useState<DayResultType | null>(null);
 
