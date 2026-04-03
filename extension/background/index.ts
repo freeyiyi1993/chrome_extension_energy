@@ -5,9 +5,18 @@ import { handleTick } from './tickHandler';
 const storageSet = (data: Partial<StorageData>) =>
   chrome.storage.local.set(data);
 
+/** 精力值 → badge 背景色（与精力条一致：绿→黄→红→灰） */
+function getBadgeColor(energy: number, threshold: number): string {
+  if (energy <= 0) return '#9ca3af';     // gray - 掉到 0 以下
+  if (energy < threshold) return '#ef4444';    // red
+  if (energy < threshold * 2) return '#f59e0b'; // yellow
+  return '#10b981';                             // green
+}
+
 /** 更新浏览器 badge：番茄进行中显示倒计时，否则显示精力值 */
 function updateBadge(state: AppState | undefined) {
   if (!state) return;
+  chrome.action.setBadgeTextColor({ color: '#ffffff' });
   const pomo = state.pomodoro;
   if (pomo.status === 'ongoing' && pomo.startedAt) {
     const secsLeft = Math.max(0, 25 * 60 - (Date.now() - pomo.startedAt) / 1000);
@@ -15,9 +24,9 @@ function updateBadge(state: AppState | undefined) {
     chrome.action.setBadgeText({ text: `${minsLeft}m` });
     chrome.action.setBadgeBackgroundColor({ color: '#10b981' });
   } else {
+    const threshold = 20;
     chrome.action.setBadgeText({ text: `${Math.floor(state.energy)}` });
-    const threshold = 20; // 简化：badge 用固定阈值
-    chrome.action.setBadgeBackgroundColor({ color: state.energy < threshold ? '#ef4444' : '#6b7280' });
+    chrome.action.setBadgeBackgroundColor({ color: getBadgeColor(state.energy, threshold) });
   }
 }
 

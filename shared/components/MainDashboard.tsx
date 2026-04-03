@@ -84,8 +84,8 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
 
   if (!state || !tasks || !config) return null;
 
-  const card = flat ? 'mb-3' : `bg-white rounded-lg ${compact ? 'p-2 mb-2' : 'p-3 mb-3'} shadow-sm`;
-  const cardLast = flat ? '' : `bg-white rounded-lg ${compact ? 'p-2' : 'p-3'} shadow-sm`;
+  const card = `bg-white rounded-lg ${compact ? 'p-2 mb-2' : 'p-3 mb-3'} shadow-sm`;
+  const cardLast = `bg-white rounded-lg ${compact ? 'p-2' : 'p-3'} shadow-sm`;
 
   return (
     <div className="animate-[fadeIn_0.2s_ease]">
@@ -104,20 +104,18 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
 
       <TaskGrid tasks={tasks} config={config} taskDefs={taskDefs} storage={storage} onDataChange={onDataChange} onPerfectDay={handlePerfectDay} className={card} />
 
-      {/* 数据统计入口 */}
-      {onNavigate && (
-        <div className={card}>
+      <div className={cardLast}>
+        <ActivityLog data={data} />
+        {onNavigate && (
           <button
-            className="w-full h-[34px] rounded flex items-center justify-center gap-2 text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors"
+            className="w-full h-[34px] rounded flex items-center justify-center gap-2 text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors mt-2"
             onClick={() => onNavigate('stats')}
           >
             <BarChart2 size={16} />
             数据统计
           </button>
-        </div>
-      )}
-
-      <ActivityLog data={data} className={cardLast} />
+        )}
+      </div>
 
       {dayResult && <DayResultModal type={dayResult} onClose={() => setDayResult(null)} />}
     </div>
