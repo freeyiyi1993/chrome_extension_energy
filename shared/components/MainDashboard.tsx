@@ -52,6 +52,13 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
 
   const [dayResult, setDayResult] = useState<DayResultType | null>(null);
 
+  const handlePerfectDay = () => {
+    if (!shownThisSession.has(`perfect-${logicalDate}`)) {
+      shownThisSession.add(`perfect-${logicalDate}`);
+      setDayResult('perfect');
+    }
+  };
+
   useEffect(() => {
     if (perfectFired) setDayResult('perfect');
   }, [perfectFired]);
@@ -80,7 +87,7 @@ export default function MainDashboard({ data, storage, onOpenMenu, onDataChange,
 
       <PomodoroRing state={state} storage={storage} onDataChange={onDataChange} compact={compact} className={card} />
 
-      <TaskGrid tasks={tasks} config={config} taskDefs={taskDefs} storage={storage} onDataChange={onDataChange} className={card} />
+      <TaskGrid tasks={tasks} config={config} taskDefs={taskDefs} storage={storage} onDataChange={onDataChange} onPerfectDay={handlePerfectDay} className={card} />
 
       {/* 数据统计入口 */}
       {onNavigate && (

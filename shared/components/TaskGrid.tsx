@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { type CustomTaskDef, type Tasks, type Config, DEFAULT_TASK_DEFS } from '../types';
 import { type StorageInterface } from '../storage';
-import { calculateRecovery } from '../logic';
+import { calculateRecovery, isPerfectDay } from '../logic';
 import { BUILTIN_ACTION_ID, CUSTOM_ACTION_ID_OFFSET } from '../constants/actionMapping';
 
 interface Props {
@@ -10,10 +10,11 @@ interface Props {
   taskDefs: CustomTaskDef[];
   storage: StorageInterface;
   onDataChange: () => void;
+  onPerfectDay?: () => void;
   className?: string;
 }
 
-export default function TaskGrid({ tasks, config, taskDefs, storage, onDataChange, className }: Props) {
+export default function TaskGrid({ tasks, config, taskDefs, storage, onDataChange, onPerfectDay, className }: Props) {
   const [localInputs, setLocalInputs] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -69,6 +70,12 @@ export default function TaskGrid({ tasks, config, taskDefs, storage, onDataChang
     const logs = d.logs || [];
     logs.unshift([Date.now(), actionId, numericVal, Number(energyDiff.toFixed(1))]);
     await storage.set({ tasks: d.tasks, state: d.state, logs });
+
+    // 打卡后立即检测完美一天（不等 polling）
+    if (onPerfectDay && isPerfectDay(d.tasks, allDefs)) {
+      onPerfectDay();
+    }
+
     onDataChange();
   };
 

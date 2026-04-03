@@ -119,7 +119,7 @@ export default function WebApp() {
     <>
       <div className="min-h-screen bg-gray-50 flex flex-col items-center px-4">
         <div className="w-full max-w-md relative flex flex-col flex-1 min-h-0 pt-4">
-          <div className="flex-1 overflow-y-auto min-h-0 pb-12">
+          <div className="flex-1 overflow-y-auto min-h-0 pb-12" style={{ paddingBottom: 'calc(3rem + env(safe-area-inset-bottom))' }}>
             <MenuPanel
               isOpen={menuOpen}
               onClose={() => setMenuOpen(false)}

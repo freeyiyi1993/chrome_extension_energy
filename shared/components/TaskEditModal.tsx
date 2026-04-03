@@ -80,9 +80,15 @@ export default function TaskEditModal({ task, isNew, onChange, onSave, onCancel 
               <input
                 type="number"
                 className="w-full border border-gray-300 rounded p-1 text-xs outline-none focus:border-emerald-500"
-                value={task.maxCount || 3}
+                value={task.maxCount ?? ''}
                 min={1}
-                onChange={e => onChange({ ...task, maxCount: parseInt(e.target.value) || 3 })}
+                onChange={e => {
+                  const raw = e.target.value;
+                  onChange({ ...task, maxCount: raw === '' ? undefined : (parseInt(raw) || undefined) } as typeof task);
+                }}
+                onBlur={() => {
+                  if (!task.maxCount || task.maxCount < 1) onChange({ ...task, maxCount: 3 });
+                }}
               />
             </div>
           )}
